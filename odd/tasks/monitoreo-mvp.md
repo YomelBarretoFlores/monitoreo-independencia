@@ -17,9 +17,9 @@ Branch: `feat/mvp`. Delivery: local only until the user approves a remote/deploy
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
 | T0 | S3 | inline | done: scaffold, shared contract `shared/types.ts` | |
-| T1 | S2, S4, S5 | delegated writer (parallel with T2; disjoint surfaces: `server/`, `scripts/`, `data/`, `tests/server/`) | pending | |
-| T2 | S1, S6 | delegated writer (parallel with T1; disjoint surfaces: `src/`, `index.html`, `public/`, `tests/ui/`) | pending | |
-| T3 | S1–S6 | inline: seam check with real data, README, Dockerfile | pending | |
+| T1 | S2, S4, S5 | delegated writer (parallel with T2) | done: 11 live collectors + 2 static datasets; 47 server tests | feat(server) |
+| T2 | S1, S6 | delegated writer (parallel with T1) | done: 46 UI tests, Chrome check desktop + 360 px | feat(ui) |
+| T3 | S1–S6 | inline | done: 12/12 sources live, no console errors, README, Dockerfile | chore |
 
 ## Log
 
@@ -44,3 +44,4 @@ Branch: `feat/mvp`. Delivery: local only until the user approves a remote/deploy
     - INAIGEM Palcacocha telemetry (no public feed)
     - MEF Consulta Amigable (Imperva)
     - SINPAD (down)
+- L3 (2026-11-07) Seam check: typecheck clean, 93 tests, build OK; server with real network reached 12/12 sources OK; page rendered in Chrome with no console errors. Decisions: CARTO tiles now need a key → Esri Light Gray Canvas; PGlite moved to dependencies so the image runs without Postgres (snapshots are a rebuildable cache); summary thresholds are an MVP proposal, not official. Pending (user decisions): GitHub remote, deploy/domain, INAIGEM agreement for Palcacocha data.
