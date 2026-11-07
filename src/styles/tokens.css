@@ -1,0 +1,70 @@
+/* Design tokens. Light theme only (the product is explicitly light). */
+:root {
+  color-scheme: light;
+
+  --font: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* surfaces */
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f7f9fb;
+  --surface-3: #eef2f6;
+  --line: #e2e7ee;
+  --line-strong: #cfd7e2;
+
+  /* text (all ≥ 4.5:1 on white) */
+  --ink: #0f1c2e;
+  --ink-2: #3d4b60;
+  --ink-3: #5b6779;
+
+  /* accent: deep calm blue */
+  --accent: #0c5a8f;
+  --accent-ink: #0a4a76;
+  --accent-soft: #e7f0f8;
+  --accent-line: #b9d3e9;
+
+  /* semantic levels: bg / text (AA on bg) / solid */
+  --normal-bg: #e6f5ec;
+  --normal-ink: #14632f;
+  --normal: #23a35a;
+  --atencion-bg: #fdf5d3;
+  --atencion-ink: #6f5300;
+  --atencion: #e5b000;
+  --alerta-bg: #fdebd8;
+  --alerta-ink: #923a0c;
+  --alerta: #ef7a1f;
+  --emergencia-bg: #fde4e4;
+  --emergencia-ink: #9b1c1c;
+  --emergencia: #d92d2d;
+
+  /* data colors */
+  --rain-past: #a9bfd4;
+  --rain-fc: #2f7dc0;
+  --river: #0c5a8f;
+  --river-fill: rgba(12, 90, 143, 0.12);
+  --river-band: rgba(47, 125, 192, 0.14);
+  --warm: #dd5a2b;
+  --cool: #2f7dc0;
+  --neutral: #b3bfcc;
+  --lake: #0891b2;
+  --quake: #c2410c;
+
+  /* shape */
+  --r-sm: 8px;
+  --r: 14px;
+  --r-lg: 20px;
+  --shadow-sm: 0 1px 2px rgba(15, 28, 46, 0.05);
+  --shadow: 0 1px 2px rgba(15, 28, 46, 0.04), 0 4px 16px rgba(15, 28, 46, 0.05);
+  --shadow-lg: 0 2px 4px rgba(15, 28, 46, 0.04), 0 12px 32px rgba(15, 28, 46, 0.08);
+
+  --gutter: 16px;
+  --maxw: 1240px;
+  --topbar-h: 64px;
+}
+
+@media (min-width: 720px) {
+  :root {
+    --gutter: 28px;
+  }
+}

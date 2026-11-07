@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es-PE">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7fa" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="Propuesta de sistema de monitoreo para el distrito de Independencia (Huaraz, Áncash): lluvias, ríos, lagunas glaciares, El Niño, emergencias y gestión municipal."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Monitoreo Independencia</title>
+  </head>
+  <body>
+    <a class="skip" href="#hoy">Ir al contenido</a>
+    <header class="topbar">
+      <div class="topbar-in">
+        <div class="brand">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="9" fill="currentColor" />
+            <path d="M5 23 12.5 11l4.5 6.5 3-4L27 23z" fill="#fff" opacity=".95" />
+            <path d="m12.5 11 2.2 3.3-2.2-.9-2 1z" fill="currentColor" opacity=".35" />
+          </svg>
+          <div class="brand-text">
+            <span class="brand-name">Municipalidad Distrital de Independencia</span>
+            <span class="brand-sub">Huaraz, Áncash · <span class="proposal">Propuesta de sistema de monitoreo</span></span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span class="updated" id="updated" aria-live="polite">Cargando datos…</span>
+          <button type="button" class="btn" id="refresh">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6" /></svg>
+            <span>Actualizar</span>
+          </button>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Secciones">
+        <div class="nav-in">
+          <a href="#hoy">Hoy</a>
+          <a href="#lluvias">Lluvias</a>
+          <a href="#rios">Ríos</a>
+          <a href="#lagunas">Lagunas</a>
+          <a href="#nino">El Niño</a>
+          <a href="#emergencias">Emergencias</a>
+          <a href="#mapa">Mapa</a>
+          <a href="#noticias">Noticias</a>
+          <a href="#normas">Normas</a>
+          <a href="#gestion">Gestión</a>
+          <a href="#riesgo">Riesgo</a>
+          <a href="#elecciones">Elecciones</a>
+          <a href="#fuentes">Fuentes</a>
+        </div>
+      </nav>
+    </header>
+
+    <div class="banner banner-demo" id="demo-banner" hidden>
+      <strong>Datos de demostración.</strong> Esta vista usa un ejemplo con valores realistas para mostrar cómo
+      funciona el sistema; no son datos en vivo.
+    </div>
+    <div class="banner banner-warn" id="net-banner" role="status" hidden></div>
+
+    <main class="wrap" id="main">
+      <section class="sec sec-hero" id="hoy" aria-labelledby="h-hoy">
+        <h1 id="h-hoy" class="sec-title">¿Cómo estamos hoy?</h1>
+        <div data-body="summary"></div>
+      </section>
+
+      <section class="sec" id="lluvias" aria-labelledby="h-lluvias">
+        <h2 id="h-lluvias" class="sec-title">Lluvias y clima</h2>
+        <p class="intro">Avisos vigentes de SENAMHI y cuánta lluvia se espera en Independencia en los próximos días.</p>
+        <div class="grid g-2">
+          <div data-body="warnings"></div>
+          <div data-body="forecast"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="rios" aria-labelledby="h-rios">
+        <h2 id="h-rios" class="sec-title">Ríos</h2>
+        <p class="intro">Cuánta agua lleva cada río frente a lo normal del último mes, y hacia dónde va.</p>
+        <div data-body="rivers"></div>
+      </section>
+
+      <section class="sec" id="lagunas" aria-labelledby="h-lagunas">
+        <h2 id="h-lagunas" class="sec-title">Lagunas glaciares</h2>
+        <p class="intro">Las lagunas de la cordillera sobre el distrito y el clima previsto en cada una.</p>
+        <div data-body="lakes"></div>
+      </section>
+
+      <section class="sec" id="nino" aria-labelledby="h-nino">
+        <h2 id="h-nino" class="sec-title">Fenómeno El Niño</h2>
+        <p class="intro">Lo que dice la comisión oficial (ENFEN) y cómo está la temperatura del océano.</p>
+        <div data-body="elNino"></div>
+      </section>
+
+      <section class="sec" id="emergencias" aria-labelledby="h-emergencias">
+        <h2 id="h-emergencias" class="sec-title">Emergencias y sismos</h2>
+        <p class="intro">Emergencias reportadas por INDECI y sismos registrados por el IGP cerca del distrito.</p>
+        <div class="grid g-2">
+          <div data-body="emergencies"></div>
+          <div data-body="earthquakes"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="mapa" aria-labelledby="h-mapa">
+        <h2 id="h-mapa" class="sec-title">Mapa</h2>
+        <p class="intro">El distrito, sus lagunas glaciares, los puntos de río y los sismos recientes.</p>
+        <div class="card map-card">
+          <div class="map" id="map" role="region" aria-label="Mapa del distrito de Independencia"></div>
+          <div data-body="map"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="noticias" aria-labelledby="h-noticias">
+        <h2 id="h-noticias" class="sec-title">Noticias</h2>
+        <p class="intro">Lo último que publican los medios sobre Independencia, Huaraz y las lluvias.</p>
+        <div data-body="news"></div>
+      </section>
+
+      <section class="sec" id="normas" aria-labelledby="h-normas">
+        <h2 id="h-normas" class="sec-title">Normas legales</h2>
+        <p class="intro">Normas publicadas en El Peruano que pueden afectar al distrito.</p>
+        <div data-body="legal"></div>
+      </section>
+
+      <section class="sec" id="gestion" aria-labelledby="h-gestion">
+        <h2 id="h-gestion" class="sec-title">Gestión municipal</h2>
+        <p class="intro">Inversiones públicas registradas en el distrito y procesos de contratación.</p>
+        <div data-body="management"></div>
+      </section>
+
+      <section class="sec" id="riesgo" aria-labelledby="h-riesgo">
+        <h2 id="h-riesgo" class="sec-title">Riesgo y datos del distrito</h2>
+        <p class="intro">Qué tan expuesto está el distrito y a cuántas personas afecta.</p>
+        <div class="grid g-2">
+          <div data-body="risk"></div>
+          <div data-body="district"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="elecciones" aria-labelledby="h-elecciones">
+        <h2 id="h-elecciones" class="sec-title">Elecciones 2026 en el distrito</h2>
+        <p class="intro">Cómo votó Independencia para el Gobierno Regional.</p>
+        <div data-body="elections"></div>
+      </section>
+
+      <section class="sec" id="fuentes" aria-labelledby="h-fuentes">
+        <h2 id="h-fuentes" class="sec-title">Fuentes</h2>
+        <p class="intro">De dónde sale cada dato, cuándo se actualizó y si la última consulta funcionó.</p>
+        <div data-body="sources"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="wrap footer-in">
+        <p>
+          <strong>Propuesta de sistema de monitoreo</strong> para el distrito de Independencia (Huaraz, Áncash). No es
+          un sitio oficial de la Municipalidad.
+        </p>
+        <p>
+          Datos públicos de SENAMHI, ENFEN, NOAA, INDECI, IGP, ANA, CENEPRED, INEI, MEF, INFOBRAS, SEACE, ONPE, El
+          Peruano, Open-Meteo y GloFAS (Copernicus). Mapa base © Esri, HERE, Garmin, © OpenStreetMap contributors.
+        </p>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
