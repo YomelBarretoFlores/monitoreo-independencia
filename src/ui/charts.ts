@@ -45,7 +45,7 @@ export function rainChart(daily: DayForecast[], today: string, w: number): strin
       const label = d.date === today ? 'Hoy' : String(Number(d.date.slice(8, 10)));
       const showLabel = d.date === today || (i % step === 0 && Math.abs(i - ti) >= step);
       return `<g><title>${esc(fmtDay(d.date))}: ${fmtNum(d.precipMm, 1)} mm${fc ? ' (pronóstico)' : ''}</title>
-        <rect class="${fc ? 'bar-fc' : 'bar-past'}${d.date === today ? ' bar-today' : ''}" x="${x}" y="${top}" width="${bw}" height="${Math.max(0, h - m.b - top)}" rx="2"/></g>
+        <rect class="${fc ? 'bar-fc' : 'bar-past'}${d.date === today ? ' bar-today' : ''}" x="${x}" y="${top}" width="${bw}" height="${Math.max(0, h - m.b - top)}" rx="${Math.min(bw / 2, 6)}"/></g>
         ${showLabel ? `<text class="ax${d.date === today ? ' ax-strong' : ''}" x="${x + bw / 2}" y="${h - m.b + 18}" text-anchor="middle">${label}</text>` : ''}`;
     })
     .join('');
@@ -149,7 +149,7 @@ export function oniChart(oni: ElNino['oni'], w: number): string {
       const cls = o.anomaly >= 0.5 ? 'oni-warm' : o.anomaly <= -0.5 ? 'oni-cool' : 'oni-neutral';
       const isLast = i === oni.length - 1;
       const show = (oni.length - 1 - i) % step === 0;
-      return `<rect class="${cls}" x="${x}" y="${top}" width="${bw}" height="${Math.abs(y(o.anomaly) - y(0))}" rx="1.5"><title>${esc(o.season)} ${o.year}: ${o.anomaly > 0 ? '+' : ''}${fmtNum(o.anomaly, 2)} °C</title></rect>
+      return `<rect class="${cls}" x="${x}" y="${top}" width="${bw}" height="${Math.abs(y(o.anomaly) - y(0))}" rx="${Math.min(bw / 2, 3)}"><title>${esc(o.season)} ${o.year}: ${o.anomaly > 0 ? '+' : ''}${fmtNum(o.anomaly, 2)} °C</title></rect>
         ${isLast ? `<text class="ax ax-strong" x="${x + bw / 2}" y="${o.anomaly >= 0 ? top - 6 : top + Math.abs(y(o.anomaly) - y(0)) + 14}" text-anchor="end">${o.anomaly > 0 ? '+' : ''}${fmtNum(o.anomaly, 2)}</text>` : ''}
         ${show ? `<text class="ax" x="${x + bw / 2}" y="${h - m.b + 18}" text-anchor="middle">${esc(o.season)} ${String(o.year).slice(2)}</text>` : ''}`;
     })

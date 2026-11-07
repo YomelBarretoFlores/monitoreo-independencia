@@ -1,62 +1,79 @@
-/* Design tokens. Light only. Sober, editorial: warm paper, white hairline cards, one accent. */
+/* Design tokens, v2: sage canvas framing the app, dark sidebar, white rounded cards,
+   lime highlight, dark ink. Light only. No color gradients. */
 :root {
   color-scheme: light;
 
   --font:
-    'IBM Plex Sans Variable', 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
 
-  /* type scale: 12 / 14 / 16 / 20 / 28 / 40 */
+  /* type scale */
   --t-xs: 0.75rem;
   --t-sm: 0.875rem;
   --t-md: 1rem;
   --t-lg: 1.25rem;
   --t-xl: 1.75rem;
-  --t-2xl: 2.5rem;
+  --t-2xl: 2.75rem;
+  --t-3xl: 3.25rem;
 
-  /* surfaces */
-  --bg: #f6f5f2;
+  /* canvas and surfaces */
+  --bg: #dfe3da; /* outside the app frame */
+  --frame: #f2f3ee; /* app canvas */
   --surface: #ffffff;
-  --surface-2: #faf9f7;
-  --line: #e4e2dc;
-  --line-strong: #cfccc4;
+  --surface-2: #f2f3ee; /* wells inside cards */
+  --line: #e6e8e1;
+  --line-strong: #cdd1c7;
 
-  /* text (≥ 4.5:1 on white and on --bg) */
-  --ink: #1b1e23;
-  --ink-2: #3f444b;
-  --ink-3: #5e636b;
+  /* ink (≥ 4.5:1 on white and on --frame) */
+  --ink: #14161a;
+  --ink-2: #3b3f46;
+  --ink-3: #5f646b;
 
-  /* one accent: deep petrol */
-  --accent: #0f4c5c;
-  --accent-ink: #0b3945;
-  --accent-soft: #e8eff0;
+  /* identity */
+  --dark: #15171b;
+  --dark-2: #23262c;
+  --on-dark: #f2f3ee;
+  --on-dark-2: #a9aeb4;
+  --lime: #d4f06f;
+  --lime-strong: #b8dc3c;
+  --lime-soft: #eef8cc;
+  --lime-ink: #29330a;
 
-  /* semantic levels, muted; only for dots, thin bars and short labels */
-  --normal: #2e7d4f;
-  --atencion: #a86b12;
-  --alerta: #b8480f;
-  --emergencia: #a8281e;
+  /* aliases used by charts and the map */
+  --accent: var(--dark);
+  --accent-ink: var(--dark);
+  --accent-soft: var(--lime-soft);
+
+  /* semantic levels: dots, thin bars and short labels only */
+  --normal: #3c9a5d;
+  --atencion: #d39a1d;
+  --alerta: #e0692b;
+  --emergencia: #cf3d2e;
 
   /* data */
-  --water: #3d7a91;
-  --quake: #9a3412;
-  --warm: #b8480f;
-  --cool: #0f4c5c;
-  --neutral: #b9b6ae;
+  --water: #4a7f95;
+  --quake: #c2511f;
+  --warm: #e0692b;
+  --cool: #8d86e0;
+  --neutral: #c9ccc3;
+  /* diagonal hatching for empty capacity (an SVG tile, not a color gradient) */
+  --hatch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cpath d='M-1 1l2-2M0 6l6-6M5 7l2-2' stroke='%23d9dcd2' stroke-width='1.4'/%3E%3C/svg%3E");
 
   /* shape */
-  --r-sm: 6px;
-  --r: 10px;
-  --gap: 16px;
+  --r-sm: 12px;
+  --r: 24px;
+  --r-pill: 999px;
+  --gap: 14px;
   --gutter: 16px;
-  --sidebar: 240px;
-  --rail: 68px;
-  --topbar-h: 56px;
-  --maxw: 1320px;
+  --sidebar: 252px;
+  --rail: 80px;
+  --topbar-h: 60px;
+  --maxw: 1360px;
 }
 
 @media (min-width: 768px) {
   :root {
-    --gap: 20px;
+    --gap: 16px;
     --gutter: 28px;
   }
 }

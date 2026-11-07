@@ -14,25 +14,38 @@ const NO_DATA = 'Sin datos por ahora';
 
 interface Tile {
   cls: string;
+  icon: IconName;
   label: string;
   value: string;
   unit?: string;
   context: string;
   level?: Level;
   href: string;
-  more: string;
+  go: string;
   extra?: string;
 }
+
+/** Round arrow button to the tile's view (top right, like the references). */
+const goButton = (href: string, label: string) =>
+  `<a class="tile-go" href="${href}" aria-label="${esc(label)}" title="${esc(label)}">${icon('external')}</a>`;
+
+const tileHead = (ic: IconName, label: string, go?: { href: string; label: string }) =>
+  `<header class="tile-h"><span class="tile-ic">${icon(ic)}</span><h2 class="tile-label">${esc(label)}</h2>${go ? goButton(go.href, go.label) : ''}</header>`;
 
 function tile(t: Tile): string {
   const isText = !/^[\d.,\s−-]+$/.test(t.value) || t.value === '—';
   return `<article class="tile ${t.cls}">
-    <h2 class="tile-label">${esc(t.label)}</h2>
-    <p class="tile-value${isText ? ' is-text' : ''}">${esc(t.value)}${t.unit ? `<span class="unit">${esc(t.unit)}</span>` : ''}</p>
+    ${tileHead(t.icon, t.label, { href: t.href, label: t.go })}
+    <p class="tile-value${isText ? ' is-text' : ''}">${esc(t.value)}${t.unit ? `<sup>${esc(t.unit)}</sup>` : ''}</p>
     <p class="tile-context">${t.level && t.level !== 'normal' ? `${levelBadge(t.level)} ` : ''}${esc(t.context)}</p>
     ${t.extra ?? ''}
-    <a class="tile-more" href="${t.href}">${esc(t.more)}${icon('arrowRight')}</a>
   </article>`;
+}
+
+/** Tick bar: `share` (0..1) of the ticks filled, the rest hatched. */
+function tickBar(share: number, label: string, n = 36): string {
+  const on = Math.round(Math.max(0, Math.min(1, share)) * n);
+  return `<div class="ticks" role="img" aria-label="${esc(label)}">${Array.from({ length: n }, (_, i) => `<i${i < on ? ' class="on"' : ''}></i>`).join('')}</div>`;
 }
 
 /** Static SVG of Huaraz province from the IGN boundaries, Independencia highlighted. */
@@ -88,30 +101,34 @@ function statusTile(p: Panel, now: number): string {
         .join('')}</ul>`
     : '<p class="reasons-none">No hay señales de alerta en las fuentes consultadas.</p>';
   return `<article class="tile tile-status">
-    <div class="status-text">
-      <h2 class="tile-label">Nivel general del distrito</h2>
-      <p class="status-level lv-${level}"><i class="dot" aria-hidden="true"></i>${esc(levelLabel(level))}</p>
-      <p class="status-headline">${esc(levelHeadline(level))}</p>
-      ${list}
-      <p class="status-meta">Actualizado ${ago(p.generatedAt, now)}. Se revisa cada 10 minutos.</p>
-      <details class="method"><summary>Cómo se calcula</summary>
-        <p>Es el nivel más alto entre los avisos vigentes de SENAMHI, el estado oficial de El Niño (ENFEN), el caudal estimado de los ríos y las emergencias recientes en Huaraz e Independencia. Los umbrales son una propuesta de este sistema, no valores oficiales.</p>
-      </details>
-    </div>
+    ${tileHead('pulse', 'Nivel general del distrito')}
+    <p class="status-level lv-${level}"><i class="dot" aria-hidden="true"></i>${esc(levelLabel(level))}</p>
+    <p class="status-headline">${esc(levelHeadline(level))}</p>
+    ${list}
+    <p class="status-meta">Actualizado ${ago(p.generatedAt, now)}. Se revisa cada 10 minutos.</p>
+    <details class="method"><summary>Cómo se calcula</summary>
+      <p>Es el nivel más alto entre los avisos vigentes de SENAMHI, el estado oficial de El Niño (ENFEN), el caudal estimado de los ríos y las emergencias recientes en Huaraz e Independencia. Los umbrales son una propuesta de este sistema, no valores oficiales.</p>
+    </details>
+  </article>`;
+}
+
+function mapTile(p: Panel): string {
+  return `<article class="tile tile-map">
+    ${tileHead('mapa', 'Mapa del distrito', { href: '#mapa', label: 'Abrir el mapa' })}
     <figure class="status-map">
       ${districtMap(p)}
-      <figcaption>Límites oficiales del IGN. <a href="#mapa">Abrir el mapa</a></figcaption>
+      <figcaption>Límites oficiales del IGN, ríos y lagunas de la ANA.</figcaption>
     </figure>
   </article>`;
 }
 
-/** Seven tiny bars for the next days of rain (one hue, today first). */
+/** Seven pill bars for the next days of rain over a hatched track (today dark). */
 function rainBars(days: { date: string; precipMm: number }[], today: string): string {
   const max = Math.max(10, ...days.map((d) => d.precipMm));
   return `<ol class="mini-bars" aria-label="Lluvia prevista por día">${days
     .map(
       (d) =>
-        `<li title="${esc(fmtDay(d.date))}: ${fmtNum(d.precipMm, 1)} mm"><i style="height:${Math.max(2, (d.precipMm / max) * 100)}%"></i><span>${d.date === today ? 'Hoy' : esc(fmtDay(d.date).split(' ')[0])}</span></li>`,
+        `<li title="${esc(fmtDay(d.date))}: ${fmtNum(d.precipMm, 1)} mm"><span class="mb-track"><i${d.date === today ? ' class="is-today"' : ''} style="height:${Math.max(8, (d.precipMm / max) * 100)}%"></i></span><span class="mb-day">${d.date === today ? 'Hoy' : esc(fmtDay(d.date).split(' ')[0])}</span></li>`,
     )
     .join('')}</ol>`;
 }
@@ -132,7 +149,8 @@ function tiles(p: Panel, now: number): string {
   out.push(
     tile({
       cls: 'tile-rain',
-      label: 'Lluvia en las próximas 72 horas',
+      icon: 'lluvias',
+      label: 'Lluvia en 72 horas',
       value: rain === null ? '—' : fmtNum(rain, 0),
       unit: rain === null ? undefined : 'mm',
       context:
@@ -145,7 +163,7 @@ function tiles(p: Panel, now: number): string {
               : 'Poca lluvia prevista',
       level: rain !== null && rain >= 30 ? 'atencion' : undefined,
       href: '#lluvias',
-      more: 'Ver lluvias',
+      go: 'Ver lluvias y clima',
       extra: fc ? rainBars(fc.daily.filter((d) => d.date >= today).slice(0, 7), today) : '',
     }),
   );
@@ -155,17 +173,18 @@ function tiles(p: Panel, now: number): string {
   out.push(
     tile({
       cls: 'tile-warn',
-      label: 'Avisos de SENAMHI vigentes',
+      icon: 'alert',
+      label: 'Avisos SENAMHI',
       value: active === null ? '—' : String(active.length),
       context:
         active === null
           ? NO_DATA
           : worst
-            ? 'es el nivel más alto entre los avisos'
-            : 'Ningún aviso cubre el distrito',
+            ? 'el nivel más alto entre los vigentes'
+            : 'Ningún aviso vigente cubre el distrito',
       level: worst ?? undefined,
       href: '#lluvias',
-      more: 'Ver avisos',
+      go: 'Ver avisos de SENAMHI',
     }),
   );
 
@@ -178,12 +197,13 @@ function tiles(p: Panel, now: number): string {
   out.push(
     tile({
       cls: 'tile-river',
+      icon: 'rios',
       label: 'Ríos',
       value: trend ? TREND_LABEL[trend] : '—',
       context: worstRiver ? `${worstRiver.name.replace(/\s*\(.*\)$/, '')}, caudal estimado` : NO_DATA,
       level: worstRiver?.level,
       href: '#rios',
-      more: 'Ver ríos y lagunas',
+      go: 'Ver ríos y lagunas',
       extra: ti ? `<span class="tile-glyph">${icon(ti)}</span>` : '',
     }),
   );
@@ -192,11 +212,12 @@ function tiles(p: Panel, now: number): string {
   out.push(
     tile({
       cls: 'tile-nino',
-      label: 'El Niño, según ENFEN',
+      icon: 'nino',
+      label: 'El Niño (ENFEN)',
       value: nino?.enfenStatus ? levelLabel(nino.enfenLevel) : '—',
       context: nino?.enfenStatus ?? NO_DATA,
       href: '#nino',
-      more: 'Ver El Niño',
+      go: 'Ver El Niño',
     }),
   );
 
@@ -206,6 +227,7 @@ function tiles(p: Panel, now: number): string {
   out.push(
     tile({
       cls: 'tile-em',
+      icon: 'emergencias',
       label: 'Emergencias en 7 días',
       value: em7 === null ? '—' : String(em7),
       context:
@@ -216,7 +238,7 @@ function tiles(p: Panel, now: number): string {
             : 'Ninguna en Huaraz o Independencia',
       level: local ? 'atencion' : undefined,
       href: '#emergencias',
-      more: 'Ver emergencias',
+      go: 'Ver emergencias',
     }),
   );
 
@@ -226,23 +248,24 @@ function tiles(p: Panel, now: number): string {
   out.push(
     tile({
       cls: 'tile-quake',
-      label: 'Sismos a menos de 100 km',
+      icon: 'quake',
+      label: 'Sismos cercanos',
       value: near === null ? '—' : String(near.length),
       context:
         near === null
           ? NO_DATA
           : maxMag !== null
-            ? `En 7 días. El mayor: magnitud ${fmtNum(maxMag, 1)}`
-            : 'Ninguno en los últimos 7 días',
+            ? `A menos de 100 km, en 7 días. El mayor: magnitud ${fmtNum(maxMag, 1)}`
+            : 'Ninguno a menos de 100 km en 7 días',
       level: maxMag === null ? undefined : maxMag >= 5.5 ? 'alerta' : maxMag >= 4.5 ? 'atencion' : undefined,
       href: '#emergencias',
-      more: 'Ver sismos',
+      go: 'Ver sismos',
     }),
   );
 
   const news = p.news.data ? [...p.news.data].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3) : null;
   out.push(`<article class="tile tile-news">
-    <h2 class="tile-label">Últimas noticias</h2>
+    ${tileHead('noticias', 'Últimas noticias', { href: '#noticias', label: 'Ver noticias' })}
     ${
       news?.length
         ? `<ol class="tile-list">${news
@@ -253,20 +276,24 @@ function tiles(p: Panel, now: number): string {
             .join('')}</ol>`
         : `<p class="tile-context">${news ? 'Sin noticias recientes' : NO_DATA}</p>`
     }
-    <a class="tile-more" href="#noticias">Ver noticias${icon('arrowRight')}</a>
   </article>`);
 
   const m = p.management.data;
   out.push(
     tile({
       cls: 'tile-inv',
-      label: 'Inversiones públicas en el distrito',
+      icon: 'gestion',
+      label: 'Inversión pública',
       value: m ? fmtNum(m.totals.count) : '—',
       context: m
-        ? `${fmtSolesShort(m.totals.accruedSoles)} gastados de ${fmtSolesShort(m.totals.costSoles)}. ${m.totals.stalled ? `${fmtNum(m.totals.stalled)} paralizadas.` : 'Ninguna paralizada.'}`
+        ? `inversiones en el distrito. ${fmtSolesShort(m.totals.accruedSoles)} gastados de ${fmtSolesShort(m.totals.costSoles)}. ${m.totals.stalled ? `${fmtNum(m.totals.stalled)} paralizadas.` : 'Ninguna paralizada.'}`
         : NO_DATA,
       href: '#gestion',
-      more: 'Ver gestión municipal',
+      go: 'Ver gestión municipal',
+      extra:
+        m && m.totals.costSoles
+          ? `${tickBar(m.totals.accruedSoles / m.totals.costSoles, `${fmtNum((m.totals.accruedSoles / m.totals.costSoles) * 100)}% del costo total ya gastado`)}<p class="ticks-label"><span>Gastado ${fmtNum((m.totals.accruedSoles / m.totals.costSoles) * 100)}%</span><span>Costo total</span></p>`
+          : '',
     }),
   );
   return out.join('');
@@ -277,7 +304,7 @@ export function renderSummary(p: Panel | null, ctx: Ctx): string {
     if (ctx.state === 'offline') return offlineBox();
     const sk = (cls: string) =>
       `<div class="tile ${cls}" aria-hidden="true"><div class="sk sk-line"></div><div class="sk sk-title"></div><div class="sk sk-line" style="width:60%"></div></div>`;
-    return `<div class="bento" aria-busy="true">${['tile-status', 'tile-rain', 'tile-warn', 'tile-river', 'tile-nino', 'tile-em', 'tile-quake', 'tile-news', 'tile-inv'].map(sk).join('')}</div>`;
+    return `<div class="bento" aria-busy="true">${['tile-status', 'tile-map', 'tile-rain', 'tile-warn', 'tile-river', 'tile-nino', 'tile-em', 'tile-quake', 'tile-news', 'tile-inv'].map(sk).join('')}</div>`;
   }
-  return `<div class="bento">${statusTile(p, ctx.now)}${tiles(p, ctx.now)}</div>`;
+  return `<div class="bento">${statusTile(p, ctx.now)}${mapTile(p)}${tiles(p, ctx.now)}</div>`;
 }

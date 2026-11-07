@@ -1,4 +1,4 @@
-import '@fontsource-variable/ibm-plex-sans';
+import '@fontsource-variable/instrument-sans';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/layout.css';
@@ -101,7 +101,7 @@ function renderView(focus: boolean): void {
   if (!view) return;
   unmountMap();
   const r = routeOf(route);
-  view.innerHTML = `<header class="view-h"><h1>${r.title}</h1><p>${r.intro}</p></header><div class="grid">${LAYOUTS[route]}</div>`;
+  view.innerHTML = `<header class="view-h"><div><p class="view-kicker">Independencia · Huaraz, Áncash</p><h1>${r.title}</h1></div><p class="view-intro">${r.intro}</p></header><div class="grid">${LAYOUTS[route]}</div>`;
   const news = view.querySelector<HTMLElement>('[data-body="news"]');
   if (news) bindNews(news, () => renderSlot(news));
   const mgmt = view.querySelector<HTMLElement>('[data-body="management"]');
@@ -227,6 +227,7 @@ function start(): void {
     const el = $(sel);
     if (el) el.insertAdjacentHTML('afterbegin', html);
   };
+  put('#sb-mark', icon('peak'));
   put('#menu-open', icon('menu'));
   put('#menu-close', icon('close'));
   put('#refresh', icon('refresh'));

@@ -97,7 +97,7 @@ export function mountMap(el: HTMLElement): void {
   neighbours = L.geoJSON(districts, {
     style: (f) =>
       isOwn(f)
-        ? { color: accent, weight: 2, fillColor: css('--accent-soft', '#e8eff0'), fillOpacity: 1 }
+        ? { color: accent, weight: 2, fillColor: css('--lime', '#d4f06f'), fillOpacity: 0.9 }
         : neighbourStyle(false),
     onEachFeature: (f, layer) => {
       layer.bindTooltip(esc(String(f.properties?.name ?? '')), {
