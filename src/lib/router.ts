@@ -81,10 +81,17 @@ const LEGACY: Record<string, RouteId> = {
 
 const IDS = new Set<string>(ROUTES.map((r) => r.id));
 
-export function parseRoute(hash: string): RouteId {
+/** The route a hash names, or null for any other in-page anchor (e.g. the skip link #view). */
+export function matchRoute(hash: string): RouteId | null {
   const key = hash.replace(/^#\/?/, '').split(/[/?]/)[0]!.toLowerCase();
+  if (!key) return 'resumen';
   if (IDS.has(key)) return key as RouteId;
-  return LEGACY[key] ?? 'resumen';
+  return LEGACY[key] ?? null;
+}
+
+/** Route to open on page load: unknown hashes fall back to the summary. */
+export function parseRoute(hash: string): RouteId {
+  return matchRoute(hash) ?? 'resumen';
 }
 
 export const routeOf = (id: RouteId): Route => ROUTES.find((r) => r.id === id)!;

@@ -1,6 +1,6 @@
 // Hash routes: one view per sidebar item, old single-page anchors still land somewhere sensible.
 import { describe, expect, it } from 'vitest';
-import { ROUTES, parseRoute } from '../../src/lib/router.ts';
+import { ROUTES, matchRoute, parseRoute } from '../../src/lib/router.ts';
 
 describe('parseRoute', () => {
   it('defaults to the summary', () => {
@@ -26,6 +26,13 @@ describe('parseRoute', () => {
 
   it('falls back to the summary for unknown hashes', () => {
     expect(parseRoute('#nada')).toBe('resumen');
+  });
+});
+
+describe('matchRoute', () => {
+  it('returns null for in-page anchors such as the skip link, so they do not navigate', () => {
+    expect(matchRoute('#view')).toBeNull();
+    expect(matchRoute('#nada')).toBeNull();
   });
 });
 

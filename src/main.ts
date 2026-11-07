@@ -7,7 +7,7 @@ import './styles/views.css';
 import type { Panel } from '../shared/types.ts';
 import { timeAgo } from './lib/format.ts';
 import { rebaseDates } from './lib/panel.ts';
-import { parseRoute, routeOf, ROUTES, type RouteId } from './lib/router.ts';
+import { matchRoute, parseRoute, routeOf, ROUTES, type RouteId } from './lib/router.ts';
 import { renderDistrict, renderElections, renderRisk } from './sections/district.ts';
 import { renderEarthquakes, renderEmergencies } from './sections/emergencies.ts';
 import { renderElNino } from './sections/elnino.ts';
@@ -247,7 +247,9 @@ function start(): void {
     }
   });
   window.addEventListener('hashchange', () => {
-    const next = parseRoute(location.hash);
+    // Anchors that are not routes (the skip link #view) only move focus; they keep the view.
+    const next = matchRoute(location.hash);
+    if (!next) return history.replaceState(null, '', `#${route}`);
     if (next === route) return;
     route = next;
     renderView(true);
