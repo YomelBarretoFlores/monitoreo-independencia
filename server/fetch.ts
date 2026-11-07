@@ -50,7 +50,8 @@ export function describeError(e: unknown): string {
       return 'No se encontró el servidor de la fuente (sin conexión o DNS).';
     if (cause?.code === 'ECONNREFUSED' || cause?.code === 'ECONNRESET')
       return 'El servidor de la fuente rechazó o cortó la conexión.';
-    return `No se pudo leer la fuente: ${e.message}`;
+    // keep the low-level code (e.g. UND_ERR_CONNECT_TIMEOUT) so a host-specific failure can be diagnosed
+    return `No se pudo leer la fuente: ${e.message}${cause?.code ? ` (${cause.code})` : ''}`;
   }
   return 'No se pudo leer la fuente.';
 }
