@@ -12,6 +12,11 @@ describe('Vercel build output', () => {
     expect(CRON.schedule).toMatch(/^\d+ \d+ \* \* \*$/);
     expect(outputConfig).toMatchObject({ version: 3, crons: [CRON] });
     expect(outputConfig.routes).toContainEqual({ handle: 'filesystem' });
+    expect(outputConfig.routes[0]).toMatchObject({
+      src: '^/(.*)$',
+      headers: { 'x-content-type-options': 'nosniff', 'x-frame-options': 'SAMEORIGIN' },
+      continue: true,
+    });
   });
 
   it('runs the bundled server/vercel.mjs on Node with up to 300 s per request', () => {

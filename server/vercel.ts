@@ -19,7 +19,10 @@ let ready: Promise<Handler> | null = null;
 async function build(env: NodeJS.ProcessEnv): Promise<Handler> {
   if (!env.DATABASE_URL) throw new Error('Falta configurar DATABASE_URL (Postgres) en Vercel.');
   const db = await openDb({ databaseUrl: env.DATABASE_URL });
-  await migrate(db);
+  await migrate(db).catch(async (e) => {
+    await db.close().catch(() => {}); // do not leave the pool open; the next request retries
+    throw e;
+  });
   const logFailure = (e: unknown) => console.error('refresh', e);
   return createHandler({
     db,

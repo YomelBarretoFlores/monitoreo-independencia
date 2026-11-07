@@ -31,6 +31,16 @@ export const vcConfig = {
 export const outputConfig = {
   version: 3,
   routes: [
+    // same security headers the Node handler sends (server/app.ts), for the static files too
+    {
+      src: '^/(.*)$',
+      headers: {
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin',
+        'x-frame-options': 'SAMEORIGIN',
+      },
+      continue: true,
+    },
     {
       src: '^/assets/(.*)$',
       headers: { 'cache-control': 'public, max-age=31536000, immutable' },
