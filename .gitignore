@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+# local PGlite database (npm run dev / npm start without DATABASE_URL)
+.datos/
