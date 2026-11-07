@@ -1,6 +1,6 @@
 import type { Level, Section, SourceMeta } from '../../shared/types.ts';
 import { esc, safeUrl, timeAgo } from '../lib/format.ts';
-import { levelIcon, levelLabel } from '../lib/levels.ts';
+import { levelLabel } from '../lib/levels.ts';
 import { sectionStatus } from '../lib/panel.ts';
 
 // Shared markup for every section: source chip, level badge, and the loading / error /
@@ -23,27 +23,27 @@ export function ago(iso: string | null | undefined, now: number): string {
 export function link(url: string | null | undefined, text: string, cls = ''): string {
   const href = safeUrl(url);
   const c = cls ? ` class="${cls}"` : '';
-  return href ? `<a${c} href="${esc(href)}" target="_blank" rel="noopener noreferrer">${text}</a>` : `<span${c}>${text}</span>`;
+  return href
+    ? `<a${c} href="${esc(href)}" target="_blank" rel="noopener noreferrer">${text}</a>`
+    : `<span${c}>${text}</span>`;
 }
 
+/** Level as a small dot plus its word: color is never the only signal. */
 export function levelBadge(level: Level, label = levelLabel(level)): string {
-  return `<span class="badge lv lv-${level}">${levelIcon(level)}<span>${esc(label)}</span></span>`;
+  return `<span class="lv lv-${level}"><i class="dot" aria-hidden="true"></i>${esc(label)}</span>`;
 }
 
 export function sourceChip(meta: SourceMeta, now: number): string {
-  const state = meta.ok ? 'ok' : 'fail';
-  const stateText = meta.ok ? 'Fuente al día' : 'La última consulta falló';
-  return `<div class="src">
-    <span class="src-dot src-${state}" role="img" aria-label="${stateText}" title="${stateText}"></span>
-    <span>Fuente: ${link(meta.url, esc(meta.name))}</span>
-    <span class="src-sep" aria-hidden="true">·</span>
-    <span>${ago(meta.updatedAt, now)}</span>
-  </div>`;
+  const fail = meta.ok ? '' : '<span class="src-fail">La última consulta falló.</span> ';
+  return `<p class="src">${fail}Fuente: ${link(meta.url, esc(meta.name))}, actualizado ${ago(meta.updatedAt, now)}</p>`;
 }
 
 export function skeleton(lines = 3, tall = false): string {
-  const rows = Array.from({ length: lines }, (_, i) => `<div class="sk sk-line" style="width:${92 - i * 14}%"></div>`).join('');
-  return `<div class="card is-loading" aria-busy="true" aria-label="Cargando">
+  const rows = Array.from(
+    { length: lines },
+    (_, i) => `<div class="sk sk-line" style="width:${92 - i * 14}%"></div>`,
+  ).join('');
+  return `<div class="card" aria-busy="true" aria-label="Cargando">
     <div class="sk sk-title"></div>${tall ? '<div class="sk sk-block"></div>' : ''}${rows}
   </div>`;
 }
@@ -71,10 +71,13 @@ interface ShellOpts<T> {
 /** Render one section in whichever state it is. */
 export function shell<T>(section: Section<T> | undefined, ctx: Ctx, o: ShellOpts<T>): string {
   const status = sectionStatus(section);
-  if (status === 'loading' || !section) return ctx.state === 'offline' ? offlineBox() : skeleton(o.skeletonLines ?? 3, o.tall);
+  if (status === 'loading' || !section)
+    return ctx.state === 'offline' ? offlineBox() : skeleton(o.skeletonLines ?? 3, o.tall);
   const { meta } = section;
   const head = (extra = '') =>
-    o.title || extra ? `<header class="card-h">${o.title ? `<h3>${esc(o.title)}</h3>` : ''}${extra}</header>` : '';
+    o.title || extra
+      ? `<header class="card-h">${o.title ? `<h3>${esc(o.title)}</h3>` : ''}${extra}</header>`
+      : '';
   const foot = sourceChip(meta, ctx.now);
   if (status === 'error') {
     return `<div class="card state state-error">${head()}
@@ -90,7 +93,7 @@ export function shell<T>(section: Section<T> | undefined, ctx: Ctx, o: ShellOpts
   }
   const stale =
     status === 'stale'
-      ? `<span class="badge badge-stale" title="${esc(meta.error ?? 'La última consulta falló')}">Desactualizado</span>`
+      ? `<span class="stale" title="${esc(meta.error ?? 'La última consulta falló')}">Desactualizado</span>`
       : '';
   const body = o.body(section.data as T);
   if (o.card === false) {

@@ -1,27 +1,30 @@
-import '@fontsource-variable/geist';
-import '@fontsource-variable/geist-mono';
+import '@fontsource-variable/ibm-plex-sans';
 import './styles/tokens.css';
 import './styles/base.css';
+import './styles/layout.css';
 import './styles/components.css';
-import './styles/sections.css';
+import './styles/views.css';
 import type { Panel } from '../shared/types.ts';
 import { timeAgo } from './lib/format.ts';
 import { rebaseDates } from './lib/panel.ts';
+import { parseRoute, routeOf, ROUTES, type RouteId } from './lib/router.ts';
 import { renderDistrict, renderElections, renderRisk } from './sections/district.ts';
 import { renderEarthquakes, renderEmergencies } from './sections/emergencies.ts';
 import { renderElNino } from './sections/elnino.ts';
 import { renderLakes } from './sections/lakes.ts';
 import { bindManagement, renderManagement } from './sections/management.ts';
-import { renderMapLegend, updateMap } from './sections/map.ts';
+import { mountMap, renderMapLegend, unmountMap, updateMap } from './sections/map.ts';
 import { bindNews, renderLegal, renderNews } from './sections/news.ts';
 import { renderRivers } from './sections/rivers.ts';
 import { renderSources } from './sections/sources.ts';
 import { renderSummary } from './sections/summary.ts';
 import { renderForecast, renderWarnings } from './sections/weather.ts';
+import { icon, type IconName } from './ui/icons.ts';
 import { ago, type Ctx, type PanelState } from './ui/shell.ts';
+import { LAYOUTS } from './views.ts';
 
-// Entry point: loads the panel (API or ?demo sample), renders every section into its
-// [data-body] slot, refreshes every 10 minutes and keeps the "hace X" labels ticking.
+// Entry point: sidebar + hash router. Only the active view is rendered; the panel (API or
+// ?demo sample) refreshes every 10 minutes and the "hace X" labels tick every 30 s.
 
 const REFRESH_MS = 10 * 60_000;
 const DEMO = new URLSearchParams(location.search).has('demo');
@@ -51,30 +54,33 @@ const RENDERERS: Record<string, Renderer> = {
 let panel: Panel | null = null;
 let state: PanelState = 'loading';
 let loading = false;
+let route: RouteId = parseRoute(location.hash);
 
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel);
-const body = (key: string) => $<HTMLElement>(`[data-body="${key}"]`);
 const ctx = (): Ctx => ({ now: Date.now(), state });
 
-function renderOne(key: string): void {
-  const el = body(key);
-  if (!el) return;
-  el.innerHTML = RENDERERS[key](panel, ctx(), el.clientWidth || 640);
+function renderSlot(el: HTMLElement): void {
+  const key = el.dataset.body ?? '';
+  const fn = RENDERERS[key];
+  if (fn) el.innerHTML = fn(panel, ctx(), el.clientWidth || 640);
 }
 
-function renderAll(): void {
-  // Keep scroll position and focus across a full redraw (auto-refresh must not move the page).
-  const y = window.scrollY;
+/** Redraw the active view's slots in place (keeps scroll, focus and text selection). */
+function renderData(): void {
   const active = document.activeElement as HTMLInputElement | null;
   const focusId = active?.id;
-  const selection = active && 'selectionStart' in active ? [active.selectionStart, active.selectionEnd] : null;
-  for (const key of Object.keys(RENDERERS)) renderOne(key);
-  try {
-    updateMap(panel, Date.now());
-  } catch (err) {
-    console.error('map', err);
+  const selection =
+    active && 'selectionStart' in active ? [active.selectionStart, active.selectionEnd] : null;
+  const y = window.scrollY;
+  document.querySelectorAll<HTMLElement>('#view [data-body]').forEach(renderSlot);
+  if (route === 'mapa') {
+    try {
+      updateMap(panel, Date.now());
+    } catch (err) {
+      console.error('map', err);
+    }
   }
-  renderTopbar();
+  renderUpdated();
   if (focusId) {
     const again = document.getElementById(focusId) as HTMLInputElement | null;
     again?.focus({ preventScroll: true });
@@ -89,7 +95,50 @@ function renderAll(): void {
   if (Math.abs(window.scrollY - y) > 1) window.scrollTo({ top: y });
 }
 
-function renderTopbar(): void {
+/** Build the active view's skeleton, bind its interactions, then fill it. */
+function renderView(focus: boolean): void {
+  const view = $('#view');
+  if (!view) return;
+  unmountMap();
+  const r = routeOf(route);
+  view.innerHTML = `<header class="view-h"><h1>${r.title}</h1><p>${r.intro}</p></header><div class="grid">${LAYOUTS[route]}</div>`;
+  const news = view.querySelector<HTMLElement>('[data-body="news"]');
+  if (news) bindNews(news, () => renderSlot(news));
+  const mgmt = view.querySelector<HTMLElement>('[data-body="management"]');
+  if (mgmt) bindManagement(mgmt);
+  const mapEl = view.querySelector<HTMLElement>('#map');
+  if (mapEl) mountMap(mapEl);
+  renderNav();
+  renderData();
+  document.title = `${r.label} · Monitoreo Independencia${DEMO ? ' · Demostración' : ''}`;
+  if (focus) {
+    window.scrollTo({ top: 0 });
+    view.focus({ preventScroll: true });
+  }
+}
+
+const NAV_ICON: Record<RouteId, IconName> = {
+  resumen: 'resumen',
+  lluvias: 'lluvias',
+  rios: 'rios',
+  nino: 'nino',
+  emergencias: 'emergencias',
+  mapa: 'mapa',
+  noticias: 'noticias',
+  gestion: 'gestion',
+  fuentes: 'fuentes',
+};
+
+function renderNav(): void {
+  const nav = $('#nav');
+  if (!nav) return;
+  nav.innerHTML = `<ul>${ROUTES.map(
+    (r) =>
+      `<li><a href="#${r.id}" title="${r.label}"${r.id === route ? ' aria-current="page"' : ''}>${icon(NAV_ICON[r.id])}<span>${r.label}</span></a></li>`,
+  ).join('')}</ul>`;
+}
+
+function renderUpdated(): void {
   const el = $('#updated');
   if (!el) return;
   if (panel) el.innerHTML = `Actualizado ${ago(panel.generatedAt, Date.now())}`;
@@ -107,12 +156,20 @@ function isPanel(x: unknown): x is Panel {
   return !!x && typeof x === 'object' && 'summary' in x && 'district' in x && 'generatedAt' in x;
 }
 
+function setBusy(busy: boolean): void {
+  for (const id of ['#refresh', '#refresh-top']) {
+    const btn = $<HTMLButtonElement>(id);
+    if (!btn) continue;
+    if (busy) btn.setAttribute('aria-busy', 'true');
+    else btn.removeAttribute('aria-busy');
+    btn.classList.toggle('is-busy', busy);
+  }
+}
+
 async function load(): Promise<void> {
   if (loading) return;
   loading = true;
-  const btn = $<HTMLButtonElement>('#refresh');
-  btn?.setAttribute('aria-busy', 'true');
-  btn?.classList.add('is-busy');
+  setBusy(true);
   try {
     const url = DEMO ? `${import.meta.env.BASE_URL}panel.sample.json` : '/api/panel';
     const res = await fetch(url, { cache: 'no-store', headers: { accept: 'application/json' } });
@@ -133,13 +190,14 @@ async function load(): Promise<void> {
       );
     } else {
       state = 'offline';
-      showNetBanner('No pudimos conectar con el sistema de monitoreo. Volveremos a intentarlo automáticamente.');
+      showNetBanner(
+        'No pudimos conectar con el sistema de monitoreo. Volveremos a intentarlo automáticamente.',
+      );
     }
   } finally {
     loading = false;
-    btn?.removeAttribute('aria-busy');
-    btn?.classList.remove('is-busy');
-    renderAll();
+    setBusy(false);
+    renderData();
   }
 }
 
@@ -151,17 +209,49 @@ function tick(): void {
   });
 }
 
+/** Phone drawer: the sidebar slides over the content; Escape, the scrim or a link closes it. */
+function setDrawer(open: boolean): void {
+  document.body.classList.toggle('drawer-open', open);
+  $('#menu-open')?.setAttribute('aria-expanded', String(open));
+  const scrim = $('#scrim');
+  if (scrim) scrim.hidden = !open;
+  if (open) $<HTMLAnchorElement>('#nav a[aria-current]')?.focus();
+}
+
 function start(): void {
   if (DEMO) {
     const banner = $('#demo-banner');
     if (banner) banner.hidden = false;
-    document.title = 'Monitoreo Independencia · Demostración';
   }
-  const news = body('news');
-  if (news) bindNews(news, () => renderOne('news'));
-  const mgmt = body('management');
-  if (mgmt) bindManagement(mgmt);
+  const put = (sel: string, html: string) => {
+    const el = $(sel);
+    if (el) el.insertAdjacentHTML('afterbegin', html);
+  };
+  put('#menu-open', icon('menu'));
+  put('#menu-close', icon('close'));
+  put('#refresh', icon('refresh'));
+  put('#refresh-top', icon('refresh'));
+
   $('#refresh')?.addEventListener('click', () => void load());
+  $('#refresh-top')?.addEventListener('click', () => void load());
+  $('#menu-open')?.addEventListener('click', () => setDrawer(true));
+  $('#menu-close')?.addEventListener('click', () => setDrawer(false));
+  $('#scrim')?.addEventListener('click', () => setDrawer(false));
+  $('#nav')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) setDrawer(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('drawer-open')) {
+      setDrawer(false);
+      $<HTMLButtonElement>('#menu-open')?.focus();
+    }
+  });
+  window.addEventListener('hashchange', () => {
+    const next = parseRoute(location.hash);
+    if (next === route) return;
+    route = next;
+    renderView(true);
+  });
 
   // Charts are drawn at the container's pixel width: redraw when the width really changes.
   let lastWidth = window.innerWidth;
@@ -170,10 +260,10 @@ function start(): void {
     if (window.innerWidth === lastWidth) return;
     lastWidth = window.innerWidth;
     clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(renderAll, 200);
+    resizeTimer = window.setTimeout(renderData, 200);
   });
 
-  renderAll(); // skeletons
+  renderView(false); // skeletons
   void load();
   setInterval(() => void load(), REFRESH_MS);
   setInterval(tick, 30_000);

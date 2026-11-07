@@ -30,10 +30,13 @@ export function renderElNino(p: Panel | null, ctx: Ctx, width: number): string {
         : '<p class="muted">ENFEN no publicó un estado reciente.</p>';
       const comms = n.communiques.length
         ? `<ul class="links">${n.communiques
-            .map((c) => `<li>${link(c.url, esc(c.title))}<span class="muted"> · ${esc(fmtDate(c.date))}</span></li>`)
+            .map(
+              (c) =>
+                `<li>${link(c.url, esc(c.title))}<span class="muted"> · ${esc(fmtDate(c.date))}</span></li>`,
+            )
             .join('')}</ul>`
         : '<p class="muted">Sin comunicados recientes.</p>';
-      return `<div class="grid nino" style="--cols:${two ? '2fr 3fr' : '1fr'}">
+      return `<div class="nino" style="--cols:${two ? '2fr 3fr' : '1fr'}">
         <article class="card">
           <header class="card-h"><h3>Lo que dice ENFEN</h3></header>
           ${status}

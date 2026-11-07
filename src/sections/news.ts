@@ -11,8 +11,7 @@ function feedItem(n: FeedItem, now: number, showSummary: boolean): string {
   return `<li class="feed-item${isLocal(n) ? ' is-local' : ''}">
     <p class="feed-title">${link(n.url, esc(n.title))}</p>
     ${showSummary && n.summary ? `<p class="feed-sum">${esc(n.summary)}</p>` : ''}
-    <p class="feed-meta">${esc(n.source)} · ${ago(n.date, now)} · ${esc(fmtDate(n.date))}</p>
-    ${n.tags.length ? `<p class="tags">${n.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</p>` : ''}
+    <p class="feed-meta">${esc(n.source)} · ${ago(n.date, now)} · ${esc(fmtDate(n.date))}${n.tags.length ? ` · ${esc(n.tags.join(', '))}` : ''}</p>
   </li>`;
 }
 

@@ -8,9 +8,8 @@ import { ago, link, shell, type Ctx } from '../ui/shell.ts';
 function emergencyItem(e: FeedItem, now: number): string {
   const local = isLocal(e);
   return `<li class="feed-item${local ? ' is-local' : ''}">
-    ${local ? '<span class="badge badge-local">En Huaraz o Independencia</span>' : ''}
     <p class="feed-title">${link(e.url, esc(e.title))}</p>
-    <p class="feed-meta">${esc(e.source)} · ${ago(e.date, now)} · ${esc(fmtDateTime(e.date))}</p>
+    <p class="feed-meta">${local ? '<span class="here">Huaraz o Independencia</span> · ' : ''}${esc(e.source)} · ${ago(e.date, now)} · ${esc(fmtDateTime(e.date))}</p>
   </li>`;
 }
 
@@ -20,8 +19,13 @@ export function renderEmergencies(p: Panel | null, ctx: Ctx): string {
     empty: 'Sin emergencias reportadas',
     emptyHint: 'INDECI no registra emergencias recientes en la zona.',
     body: (list) => {
-      const sorted = [...list].sort((a, b) => Number(isLocal(b)) - Number(isLocal(a)) || b.date.localeCompare(a.date));
-      return `<ul class="feed">${sorted.slice(0, 8).map((e) => emergencyItem(e, ctx.now)).join('')}</ul>`;
+      const sorted = [...list].sort(
+        (a, b) => Number(isLocal(b)) - Number(isLocal(a)) || b.date.localeCompare(a.date),
+      );
+      return `<ul class="feed">${sorted
+        .slice(0, 8)
+        .map((e) => emergencyItem(e, ctx.now))
+        .join('')}</ul>`;
     },
   });
 }
@@ -45,7 +49,10 @@ export function renderEarthquakes(p: Panel | null, ctx: Ctx): string {
     empty: 'Sin sismos recientes cerca del distrito',
     body: (list) => {
       const sorted = [...list].sort((a, b) => b.date.localeCompare(a.date));
-      return `<ul class="quakes">${sorted.slice(0, 8).map((q) => quakeItem(q, ctx.now)).join('')}</ul>
+      return `<ul class="quakes">${sorted
+        .slice(0, 8)
+        .map((q) => quakeItem(q, ctx.now))
+        .join('')}</ul>
       <details class="method"><summary>¿Cómo leer la magnitud?</summary>
         <p>Menos de 4.5: leve, casi siempre no se siente o se siente poco. Entre 4.5 y 5.5: moderado, se siente con claridad. Más de 5.5: fuerte, puede causar daños según la distancia y la profundidad. La distancia se mide desde el centro del distrito.</p>
       </details>`;

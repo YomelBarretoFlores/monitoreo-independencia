@@ -46,8 +46,8 @@ Variables: `PORT` (8787), `DATABASE_URL` (opcional; sin ella PGlite en `DATA_DIR
 - `shared/types.ts`: contrato entre servidor e interfaz (`GET /api/panel` → `Panel`).
 - `server/`: recolectores (`collectors/`), guardado de la última respuesta buena por fuente
   (`snapshots`), nivel general (`summary.ts`, umbrales documentados ahí), HTTP (`app.ts`).
-- `src/`: interfaz sin framework; lógica pura en `src/lib/` (probada), secciones en `src/sections/`.
+- `src/`: interfaz sin framework con barra lateral y una vista por tema (rutas `#resumen`, `#lluvias`, `#rios`, `#nino`, `#emergencias`, `#mapa`, `#noticias`, `#gestion`, `#fuentes`); disposición de cada vista en `src/views.ts`, lógica pura en `src/lib/` (probada), secciones en `src/sections/`.
 - `data/`: datos fijos versionados (lagunas, inversiones, elecciones; límites distritales del IGN y ríos de la ANA, con su fuente en cada archivo).
 
 Los umbrales del nivel general son una propuesta inicial, no valores oficiales: conviene calibrarlos
-con SENAMHI e INDECI. Mapa base: Esri Light Gray Canvas (revisar sus términos antes de producción).
+con SENAMHI e INDECI. El mapa se dibuja con capas oficiales (límites del IGN, ríos de la ANA); el mapa base de Esri Light Gray Canvas es opcional (revisar sus términos antes de producción).

@@ -20,15 +20,21 @@ const SECTIONS: [keyof Panel, string][] = [
 ];
 
 const every = (m: number | null) =>
-  m === null ? 'Dato fijo' : m < 60 ? `Cada ${m} min` : m % 60 === 0 ? `Cada ${fmtNum(m / 60)} h` : `Cada ${m} min`;
+  m === null
+    ? 'Dato fijo'
+    : m < 60
+      ? `Cada ${m} min`
+      : m % 60 === 0
+        ? `Cada ${fmtNum(m / 60)} h`
+        : `Cada ${m} min`;
 
 export function renderSources(p: Panel | null, ctx: Ctx): string {
   if (!p) return ctx.state === 'offline' ? offlineBox() : skeleton(5);
   const rows = SECTIONS.map(([key, label]) => {
     const { meta } = p[key] as Section<unknown>;
     const state = meta.ok
-      ? '<span class="status st-done">✓ Funciona</span>'
-      : `<span class="status st-bad">✕ Falló</span>${meta.error ? `<span class="muted err">${esc(meta.error)}</span>` : ''}`;
+      ? '<span class="lv lv-normal"><i class="dot" aria-hidden="true"></i>Funciona</span>'
+      : `<span class="lv lv-emergencia"><i class="dot" aria-hidden="true"></i>Falló</span>${meta.error ? `<span class="muted err">${esc(meta.error)}</span>` : ''}`;
     return `<tr>
       <td>${esc(label)}</td>
       <td>${link(meta.url, esc(meta.name))}</td>

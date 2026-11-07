@@ -1,6 +1,7 @@
 import type { Investment, Management, Panel } from '../../shared/types.ts';
 import { esc, fmtDate, fmtNum, fmtPct, fmtSoles, fmtSolesShort, tidyCaps } from '../lib/format.ts';
 import { filterInvestments, sortInvestments, type InvestmentKey } from '../lib/panel.ts';
+import { icon } from '../ui/icons.ts';
 import { link, shell, type Ctx } from '../ui/shell.ts';
 
 // Gestión municipal: investment totals, a searchable/sortable table, and SEACE procurements.
@@ -18,8 +19,14 @@ const COLS: { key: InvestmentKey; label: string; num?: boolean }[] = [
 ];
 
 function statusPill(s: string): string {
-  const cls = /paraliz|sin avance|fallida/i.test(s) ? 'st-bad' : /ejecuci/i.test(s) ? 'st-run' : /culmin/i.test(s) ? 'st-done' : 'st-other';
-  return `<span class="status ${cls}">${esc(s)}</span>`;
+  const cls = /paraliz|sin avance|fallida/i.test(s)
+    ? 'st-bad'
+    : /ejecuci/i.test(s)
+      ? 'st-run'
+      : /culmin/i.test(s)
+        ? 'st-done'
+        : 'st-other';
+  return `<span class="st ${cls}"><i class="dot" aria-hidden="true"></i>${esc(s)}</span>`;
 }
 
 function row(i: Investment): string {
@@ -39,10 +46,12 @@ function tableHTML(m: Management): string {
   const head = COLS.map((c) => {
     const active = c.key === view.key;
     const sort = active ? (view.dir === 'asc' ? 'ascending' : 'descending') : 'none';
-    return `<th scope="col" aria-sort="${sort}" class="${c.num ? 'num' : ''}"><button type="button" data-sort="${c.key}">${c.label}<span class="sort-ic" aria-hidden="true">${active ? (view.dir === 'asc' ? '▲' : '▼') : '↕'}</span></button></th>`;
+    return `<th scope="col" aria-sort="${sort}" class="${c.num ? 'num' : ''}"><button type="button" data-sort="${c.key}">${c.label}${icon(active ? (view.dir === 'asc' ? 'sortAsc' : 'sortDesc') : 'sortNone', 'ic sort-ic')}</button></th>`;
   }).join('');
   return `<p class="table-count" aria-live="polite">${
-    filtered.length ? `Mostrando ${fmtNum(shown.length)} de ${fmtNum(filtered.length)} inversiones` : 'Ninguna inversión coincide con la búsqueda.'
+    filtered.length
+      ? `Mostrando ${fmtNum(shown.length)} de ${fmtNum(filtered.length)} inversiones`
+      : 'Ninguna inversión coincide con la búsqueda.'
   }</p>
   <div class="table-scroll" tabindex="0" role="region" aria-label="Tabla de inversiones">
     <table class="table"><thead><tr>${head}</tr></thead><tbody>${shown.map(row).join('')}</tbody></table>
@@ -62,7 +71,9 @@ export function renderManagement(p: Panel | null, ctx: Ctx): string {
       const procs = m.procurements.length
         ? `<ul class="feed">${m.procurements
             .map(
-              (pr) => `<li class="feed-item"><p class="feed-title">${link(pr.url, esc(tidyCaps(pr.object)))}</p>
+              (
+                pr,
+              ) => `<li class="feed-item"><p class="feed-title">${link(pr.url, esc(tidyCaps(pr.object)))}</p>
               <p class="feed-meta">${esc(tidyCaps(pr.entity))} · ${esc(pr.method)} · <strong>${fmtSolesShort(pr.amountSoles)}</strong>${pr.date ? ` · ${esc(fmtDate(pr.date))}` : ''}</p></li>`,
             )
             .join('')}</ul>`
@@ -71,12 +82,12 @@ export function renderManagement(p: Panel | null, ctx: Ctx): string {
         <div class="kpi"><span class="kpi-label">Inversiones registradas</span><span class="kpi-value">${fmtNum(t.count)}</span><span class="kpi-sub">De todas las entidades en el distrito</span></div>
         <div class="kpi"><span class="kpi-label">Costo total</span><span class="kpi-value">${fmtSolesShort(t.costSoles)}</span><span class="kpi-sub">Monto actualizado de las inversiones</span></div>
         <div class="kpi"><span class="kpi-label">Ya gastado (devengado)</span><span class="kpi-value">${fmtSolesShort(t.accruedSoles)}</span><span class="kpi-sub">${spentPct !== null ? `${fmtPct(spentPct)} del costo total` : '—'}</span></div>
-        <div class="kpi${t.stalled ? ' lv-alerta' : ''}"><span class="kpi-label">Obras paralizadas</span><span class="kpi-value">${fmtNum(t.stalled)}</span><span class="kpi-sub">${t.stalled ? 'Requieren seguimiento' : 'Ninguna paralizada'}</span></div>
+        <div class="kpi"><span class="kpi-label">Obras paralizadas</span><span class="kpi-value">${fmtNum(t.stalled)}</span><span class="kpi-sub">${t.stalled ? '<span class="lv lv-alerta"><i class="dot" aria-hidden="true"></i>Requieren seguimiento</span>' : 'Ninguna paralizada'}</span></div>
       </div>
       <div class="card">
         <header class="card-h"><h3>Inversiones en el distrito</h3></header>
         <label class="search"><span class="sr-only">Buscar inversión</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          ${icon('search')}
           <input id="inv-search" type="search" placeholder="Buscar por nombre, CUI, estado o entidad" value="${esc(view.query)}" autocomplete="off" />
         </label>
         <div id="inv-table">${tableHTML(m)}</div>
@@ -110,7 +121,14 @@ export function bindManagement(el: HTMLElement): void {
     const sortBtn = target.closest<HTMLButtonElement>('button[data-sort]');
     if (sortBtn) {
       const key = sortBtn.dataset.sort as InvestmentKey;
-      view.dir = view.key === key ? (view.dir === 'asc' ? 'desc' : 'asc') : key === 'name' || key === 'status' ? 'asc' : 'desc';
+      view.dir =
+        view.key === key
+          ? view.dir === 'asc'
+            ? 'desc'
+            : 'asc'
+          : key === 'name' || key === 'status'
+            ? 'asc'
+            : 'desc';
       view.key = key;
       redrawTable();
       el.querySelector<HTMLButtonElement>(`button[data-sort="${key}"]`)?.focus();
