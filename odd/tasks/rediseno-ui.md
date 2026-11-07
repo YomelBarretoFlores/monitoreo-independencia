@@ -15,11 +15,11 @@ Branch: `feat/redesign` (from `feat/mvp`). Delivery: `ask-on-risk`, local only. 
 
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
-| T1 | S2, S5 | inline | pending: official geo data (IGN districts of Huaraz, ANA rivers), script with tests, server wiring | |
-| T2 | S1, S3, S4, S5 | inline | pending: app shell (sidebar, rail, drawer, hash router), tokens, typography, icons | |
-| T3 | S3, S4 | inline | pending: Resumen bento grid | |
-| T4 | S2, S3 | inline | pending: vector map view (official layers, optional basemap) | |
-| T5 | S3, S4 | inline | pending: restyle remaining views and charts; Chrome check desktop / tablet / 360 px | |
+| T1 | S2, S5 | inline | done: `scripts/build-official-geo.ts` + tests; data/huaraz-districts, boundary (IGN), rivers (ANA); OSM script removed; RED→GREEN observed | fefc15c |
+| T2 | S1, S3, S4, S5 | inline | done: sidebar / rail / drawer, hash router (`src/lib/router.ts`, tests), IBM Plex Sans, own line icons | 4bbc938 |
+| T3 | S3, S4 | inline | done: 12-col bento, status tile with static IGN map (`src/lib/geo.ts`, tests) | 4bbc938 |
+| T4 | S2, S3 | inline | done: Leaflet vector map from IGN/ANA layers, "Mapa base" toggle | 4bbc938 |
+| T5 | S3, S4 | inline | done: views restyled, unicode icons and pills removed; Chrome: desktop, 960, 390 and 360 px, no horizontal scroll in any view, no console errors | 4bbc938 |
 
 Route evidence: T1 is ~200 lines and T2–T5 share the shell and tokens, so no writer trigger holds; all inline.
 
@@ -31,3 +31,5 @@ Route evidence: T1 is ~200 lines and T2–T5 share the shell and tokens, so no w
   - CENEPRED SIGRID `FEN/ER_NINO2027_BD/MapServer/5` also returns the district polygon (ubigeo 020105, 345.89 km²) but it is a risk layer, not a boundary product → IGN preferred.
   - ANA GeoSNIRH `Público/Rios/MapServer/37` (RiosQuebradas, categorized water bodies): río Santa, río Quellcayhuanca, río Pira, quebrada Honda inside the Huaraz envelope.
   - The population estimate (88 999, 2025, INEI) used to come from OSM tags on the old boundary; it moves to a server constant so the official boundary carries only IGN data.
+- L3 (2026-11-07) Checks: typecheck clean, 104 tests, build OK. Chrome (real API data): every view at 360/390 px has scrollWidth = viewport; drawer opens/closes and focuses the current item; basemap toggle loads tiles and makes neighbours transparent. Review: 4bbc938 escalated as item 5 (font dependency swap) → independent verifier, then native review consent.
+
