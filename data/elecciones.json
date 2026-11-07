@@ -1,0 +1,70 @@
+{
+  "title": "Elecciones Regionales 2026 – Gobernador (Independencia)",
+  "asOf": "2026-10-14T03:55:00.000Z",
+  "actasPct": 99.462,
+  "turnoutPct": 78.139,
+  "emitted": 42406,
+  "valid": 35558,
+  "parties": [
+    {
+      "name": "PARTIDO DEMÓCRATA VERDE",
+      "votes": 8654,
+      "pct": 24.34
+    },
+    {
+      "name": "PARTIDO PAÍS PARA TODOS",
+      "votes": 7015,
+      "pct": 19.73
+    },
+    {
+      "name": "PODEMOS PERÚ",
+      "votes": 4665,
+      "pct": 13.12
+    },
+    {
+      "name": "PARTIDO DEMOCRÁTICO SOMOS PERÚ",
+      "votes": 3923,
+      "pct": 11.03
+    },
+    {
+      "name": "ALIANZA ELECTORAL VENCEREMOS",
+      "votes": 3761,
+      "pct": 10.58
+    },
+    {
+      "name": "ALIANZA PARA EL PROGRESO",
+      "votes": 3123,
+      "pct": 8.78
+    },
+    {
+      "name": "PARTIDO FRENTE DE LA ESPERANZA 2021",
+      "votes": 1218,
+      "pct": 3.43
+    },
+    {
+      "name": "JUNTOS POR EL PERÚ",
+      "votes": 1149,
+      "pct": 3.23
+    },
+    {
+      "name": "RENOVACIÓN POPULAR PERÚ",
+      "votes": 622,
+      "pct": 1.75
+    },
+    {
+      "name": "SOCIOS POR ANCASH",
+      "votes": 609,
+      "pct": 1.71
+    },
+    {
+      "name": "PARTIDO POLÍTICO PERÚ PRIMERO",
+      "votes": 551,
+      "pct": 1.55
+    },
+    {
+      "name": "ACCIÓN POPULAR",
+      "votes": 268,
+      "pct": 0.75
+    }
+  ]
+}

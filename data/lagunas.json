@@ -1,0 +1,49 @@
+{
+  "fuentes": {
+    "ubicacionYArea": "ANA – GeoSNIRH, servicio Público/Lagunas (capa Lagunas, polígonos de la Dirección de Calidad y Evaluación de Recursos Hídricos sobre imagen satelital del 14/08/2003). Punto = centro del polígono; área calculada del polígono. Consulta del 07/11/2026: https://geosnirh.ana.gob.pe/server/rest/services/P%C3%BAblico/Lagunas/MapServer/36",
+    "altitud": "Modelo digital de elevación (Copernicus DEM 90 m) vía Open-Meteo Elevation API, en el centro de cada laguna. OpenStreetMap da 4580 m para Palcacocha y 4470 m para Llaca.",
+    "nombres": "Identificación de cada polígono por su ubicación: OpenStreetMap (Laguna Palcacocha, way 67765132; Laguna Llaca, way 66610954) y la ubicación conocida de Cuchillacocha y Tullparaju en la cabecera de la quebrada Quillcayhuanca."
+  },
+  "lagunas": [
+    {
+      "id": "palcacocha",
+      "name": "Laguna Palcacocha",
+      "point": [-9.3957, -77.3791],
+      "basin": "Quebrada Cojup → río Quillcay → Huaraz",
+      "areaKm2": 0.32,
+      "elevationM": 4550,
+      "anaPolygonId": 134136,
+      "riskNote": "El 13 de diciembre de 1941 su desborde (aluvión) bajó por la quebrada Cojup y el río Quillcay, arrasó cerca de un tercio de Huaraz y causó miles de muertes. Es la laguna glaciar más estudiada del Perú por su peligro para Huaraz: el Estado declaró emergencia en su cuenca en 2011 (decreto supremo en El Peruano) y en 2017 una ley la declaró de interés nacional para su protección y prevención de riesgos. El área de 0,32 km² es de la imagen de 2003 y puede haber cambiado. Fuentes: ANA, INAIGEM, El Peruano."
+    },
+    {
+      "id": "cuchillacocha",
+      "name": "Laguna Cuchillacocha",
+      "point": [-9.4109, -77.3538],
+      "basin": "Quebrada Quillcayhuanca → río Quillcay → Huaraz",
+      "areaKm2": 0.14,
+      "elevationM": 4607,
+      "anaPolygonId": 134112,
+      "riskNote": "Laguna de origen glaciar en la cabecera de la quebrada Quillcayhuanca. Si se desbordara, sus aguas bajarían por el río Quillcay, que cruza Huaraz. No tiene monitoreo público en tiempo real. Fuente: ANA (capa de lagunas, GeoSNIRH)."
+    },
+    {
+      "id": "tullparaju",
+      "name": "Laguna Tullparaju",
+      "point": [-9.419, -77.3412],
+      "basin": "Quebrada Quillcayhuanca → río Quillcay → Huaraz",
+      "areaKm2": 0.43,
+      "elevationM": 4276,
+      "anaPolygonId": 134113,
+      "riskNote": "Laguna de origen glaciar al pie del nevado Tullparaju, en la cabecera de la quebrada Quillcayhuanca; es la de mayor superficie de esa quebrada en la capa de lagunas del ANA. Si se desbordara, sus aguas bajarían por el río Quillcay hacia Huaraz. No tiene monitoreo público en tiempo real. Fuente: ANA (capa de lagunas, GeoSNIRH)."
+    },
+    {
+      "id": "llaca",
+      "name": "Laguna Llaca",
+      "point": [-9.437, -77.4448],
+      "basin": "Quebrada Llaca (distrito de Independencia)",
+      "areaKm2": 0.04,
+      "elevationM": 4475,
+      "anaPolygonId": 134181,
+      "riskNote": "Laguna de origen glaciar pequeña en la quebrada Llaca, al noreste de la ciudad y dentro del distrito. No tiene monitoreo público en tiempo real. Fuentes: ANA (capa de lagunas, GeoSNIRH), OpenStreetMap."
+    }
+  ]
+}
