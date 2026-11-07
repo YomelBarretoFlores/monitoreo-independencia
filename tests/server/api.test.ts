@@ -137,8 +137,10 @@ describe('GET /api/panel', () => {
     expect(body.elections.data!.parties.length).toBeGreaterThan(0);
     expect(body.boundary).toMatchObject({
       type: 'Feature',
+      properties: { ubigeo: '020105', source: expect.stringMatching(/IGN/) },
       geometry: { type: expect.stringMatching(/Polygon/) },
     });
+    expect(body.district.populationEstimate).toEqual({ year: 2025, value: 88999 });
     // every source, including the ONI that is merged into elNino
     expect(body.sources.map((s) => s.id)).toContain('noaa-oni');
   });

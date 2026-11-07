@@ -1,4 +1,5 @@
-// Static datasets committed under data/: imported from resultados-ancash (S4) and the OSM outline.
+// Static datasets committed under data/: imported from resultados-ancash (S4) and the official IGN
+// district outline (scripts/build-official-geo.ts).
 import { existsSync, readFileSync } from 'node:fs';
 import type { Feature } from 'geojson';
 import type { Elections, Management, SourceMeta } from '../shared/types.ts';

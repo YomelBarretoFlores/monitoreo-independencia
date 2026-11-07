@@ -6,7 +6,7 @@ import type { Collector } from './collectors/types.ts';
 import type { Snapshot } from './db.ts';
 import { type StaticData, staticMeta } from './static-data.ts';
 import { buildSummary } from './summary.ts';
-import { DISTRICT_BASE } from './util.ts';
+import { DISTRICT_BASE, POPULATION_ESTIMATE } from './util.ts';
 
 /**
  * Panel plus `sources`: the status of every source, including those merged into one section
@@ -51,16 +51,11 @@ export function assemblePanel(
       : null;
 
   const cen = data<CenepredData>('cenepred');
-  const props = (stat.boundary?.properties ?? {}) as { population?: number; populationDate?: string };
   const district: Panel['district'] = {
     ...DISTRICT_BASE,
     population2017: cen?.district.population2017 ?? null,
     households2017: cen?.district.households2017 ?? null,
-    // INEI estimate as tagged in OpenStreetMap (population + population:date, source:population=INEI)
-    populationEstimate:
-      props.population && props.populationDate
-        ? { year: Number(props.populationDate), value: props.population }
-        : null,
+    populationEstimate: POPULATION_ESTIMATE,
     povertyPct: cen?.district.povertyPct ?? null,
   };
 

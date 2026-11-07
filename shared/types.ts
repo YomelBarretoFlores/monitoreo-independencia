@@ -209,6 +209,6 @@ export interface Panel {
   risk: Section<RiskProfile>;
   management: Section<Management>;
   elections: Section<Elections>;
-  /** Overlay for the map: district outline (GeoJSON Feature, OSM relation 1953273) */
+  /** District outline: official IGN boundary (HDX COD-AB Peru), provenance in its properties */
   boundary: Feature | null;
 }

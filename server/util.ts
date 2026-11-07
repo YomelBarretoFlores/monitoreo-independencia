@@ -11,6 +11,13 @@ export const DISTRICT_BASE: Pick<District, 'ubigeo' | 'name' | 'province' | 'reg
 };
 export const CENTER = DISTRICT_BASE.center;
 
+/**
+ * INEI population estimate for the district. Taken from the OpenStreetMap relation 1953273 tags
+ * (population=88999, population:date=2025, source:population=INEI) before the outline moved to
+ * the official IGN boundary; update it when INEI publishes a newer estimate.
+ */
+export const POPULATION_ESTIMATE: District['populationEstimate'] = { year: 2025, value: 88999 };
+
 export const LEVEL_ORDER: Level[] = ['normal', 'atencion', 'alerta', 'emergencia'];
 export const levelRank = (l: Level) => LEVEL_ORDER.indexOf(l);
 export const worstLevel = (levels: Level[]): Level =>

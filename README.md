@@ -35,7 +35,7 @@ npm run build
 npm run collect -- --out panel.json   # consulta todas las fuentes una vez e imprime su estado
 npm start            # producción: sirve dist/ y la API
 node scripts/import-resultados.ts      # regenera data/inversiones.json y data/elecciones.json
-node scripts/fetch-boundary.ts         # regenera data/boundary.geojson (OSM)
+node scripts/build-official-geo.ts <per_admin3.geojson>  # regenera límites IGN y ríos ANA (ver cabecera del script)
 ```
 
 Variables: `PORT` (8787), `DATABASE_URL` (opcional; sin ella PGlite en `DATA_DIR`, por defecto `.datos/`),
@@ -47,7 +47,7 @@ Variables: `PORT` (8787), `DATABASE_URL` (opcional; sin ella PGlite en `DATA_DIR
 - `server/`: recolectores (`collectors/`), guardado de la última respuesta buena por fuente
   (`snapshots`), nivel general (`summary.ts`, umbrales documentados ahí), HTTP (`app.ts`).
 - `src/`: interfaz sin framework; lógica pura en `src/lib/` (probada), secciones en `src/sections/`.
-- `data/`: datos fijos versionados (lagunas, inversiones, elecciones, contorno OSM).
+- `data/`: datos fijos versionados (lagunas, inversiones, elecciones; límites distritales del IGN y ríos de la ANA, con su fuente en cada archivo).
 
 Los umbrales del nivel general son una propuesta inicial, no valores oficiales: conviene calibrarlos
 con SENAMHI e INDECI. Mapa base: Esri Light Gray Canvas (revisar sus términos antes de producción).
