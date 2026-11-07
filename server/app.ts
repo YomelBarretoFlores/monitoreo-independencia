@@ -1,13 +1,14 @@
 // HTTP handler: the JSON API and the compiled UI (dist/) with SPA fallback to index.html.
 // Only Node built-ins. Static files are read once and kept in memory with their gzip version.
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import type { Collector } from './collectors/types.ts';
-import { type Db, loadSnapshots } from './db.ts';
+import { type Db, loadSnapshots, type Snapshot } from './db.ts';
 import { assemblePanel } from './panel.ts';
+import type { RunResult } from './scheduler.ts';
 import type { StaticData } from './static-data.ts';
 
 export interface AppOptions {
@@ -16,6 +17,17 @@ export interface AppOptions {
   staticData: StaticData;
   /** Folder with the built UI; without it only the API answers (dev: Vite proxies /api) */
   dist?: string;
+  /** Serverless hosts: called with the snapshots of every /api/panel read (refresh-on-read) */
+  onPanelRead?: (snaps: Map<string, Snapshot>) => void;
+  /** Serverless hosts: GET /api/cron/collect runs `run` when called with `Authorization: Bearer <secret>` */
+  cron?: { secret: string; run: () => Promise<RunResult[]> };
+}
+
+/** Constant-time comparison of the Authorization header against `Bearer <secret>` */
+function authorized(req: IncomingMessage, secret: string): boolean {
+  const got = Buffer.from(String(req.headers.authorization ?? ''));
+  const want = Buffer.from(`Bearer ${secret}`);
+  return got.length === want.length && timingSafeEqual(got, want);
 }
 
 const SECURITY_HEADERS = {
@@ -81,7 +93,7 @@ interface CachedFile {
   etag: string;
 }
 
-export function createHandler({ db, collectors, staticData, dist }: AppOptions) {
+export function createHandler({ db, collectors, staticData, dist, onPanelRead, cron }: AppOptions) {
   const root = dist && existsSync(dist) ? resolve(dist) : undefined;
   const cache = new Map<string, CachedFile>();
 
@@ -154,8 +166,13 @@ export function createHandler({ db, collectors, staticData, dist }: AppOptions) 
         if (method !== 'GET' && method !== 'HEAD')
           return sendJson(req, res, 405, { error: 'Método no permitido.' });
         if (path === '/api/panel') {
-          const panel = assemblePanel(await loadSnapshots(db), staticData, collectors);
-          return sendJson(req, res, 200, panel, 'no-cache');
+          const snaps = await loadSnapshots(db);
+          onPanelRead?.(snaps);
+          return sendJson(req, res, 200, assemblePanel(snaps, staticData, collectors), 'no-cache');
+        }
+        if (path === '/api/cron/collect' && cron?.secret) {
+          if (!authorized(req, cron.secret)) return sendJson(req, res, 401, { error: 'No autorizado.' });
+          return sendJson(req, res, 200, { ran: await cron.run() });
         }
         if (path === '/api/health') {
           const panel = assemblePanel(await loadSnapshots(db), staticData, collectors);

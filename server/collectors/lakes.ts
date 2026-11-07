@@ -2,6 +2,7 @@
 // Open-Meteo forecast at each lake. There is no public real-time lake monitoring (INAIGEM's Palcacocha
 // telemetry has no public feed), so liveMonitoring is false for all of them.
 import { readFileSync } from 'node:fs';
+import { DATA_DIR } from '../static-data.ts';
 import type { GlacialLake } from '../../shared/types.ts';
 import { fetchJson } from '../fetch.ts';
 import { dailyRows, type OpenMeteoDaily } from './open-meteo.ts';
@@ -9,7 +10,7 @@ import type { Collector } from './types.ts';
 
 export type LakeFact = Omit<GlacialLake, 'forecast' | 'liveMonitoring'> & { anaPolygonId?: number };
 
-const FILE = new URL('../../data/lagunas.json', import.meta.url);
+const FILE = new URL('lagunas.json', DATA_DIR);
 export const LAKES: LakeFact[] = (JSON.parse(readFileSync(FILE, 'utf8')) as { lagunas: LakeFact[] }).lagunas;
 
 export function lakesUrl(lakes: LakeFact[]) {

@@ -5,7 +5,7 @@ import { type Db, loadSnapshots, saveFailure, saveSuccess } from './db.ts';
 import { describeError } from './fetch.ts';
 
 /** After a failure, retry within this many minutes (or the normal interval if shorter) */
-const RETRY_MINUTES = 15;
+export const RETRY_MINUTES = 15;
 
 export interface RunResult {
   key: string;

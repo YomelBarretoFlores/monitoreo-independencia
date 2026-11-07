@@ -26,7 +26,8 @@ export const STATIC_SOURCES: Record<'inversiones' | 'elecciones', SourceInfo> = 
   },
 };
 
-const DATA_DIR = new URL('../data/', import.meta.url);
+/** data/ next to server/; also the layout of the bundled Vercel function (scripts/build-vercel.ts) */
+export const DATA_DIR = new URL('../data/', import.meta.url);
 
 function readJson<T>(dir: URL, file: string): T | null {
   const url = new URL(file, dir);

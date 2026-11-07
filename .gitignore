@@ -4,3 +4,5 @@ dist/
 *.local
 # local PGlite database (npm run dev / npm start without DATABASE_URL)
 .datos/
+# Vercel CLI (local link and build output)
+.vercel/
