@@ -68,8 +68,11 @@ export function panelItems(data: SafeZoneData): PanelItem[] {
   return [...zones, ...places];
 }
 
-const check = (name: string, value: string, checked: boolean, body: string) =>
-  `<label class="sz-check"><input type="checkbox" name="${name}" value="${value}"${checked ? ' checked' : ''}><span>${body}</span></label>`;
+const check = (name: string, value: string, checked: boolean, body: string, cls = 'sz-check') =>
+  `<label class="${cls}"><input type="checkbox" name="${name}" value="${value}"${checked ? ' checked' : ''}><span>${body}</span></label>`;
+/** Pill toggle: same checkbox, drawn as a chip */
+const pill = (name: string, value: string, checked: boolean, body: string) =>
+  check(name, value, checked, body, 'sz-pill');
 
 export function mountPanel(
   root: HTMLElement,
@@ -86,23 +89,23 @@ export function mountPanel(
           .length;
 
   root.innerHTML = `<div class="card-h"><h3>Zonas seguras ante aluvión</h3>
-      <button type="button" class="sz-fit" data-action="fit">${icon('mapa')}<span>Ver en el mapa</span></button></div>
-    <p class="sz-intro">Peligro, zonas seguras y lugares de apoyo de los mapas oficiales de Quillcay (Huaraz e Independencia) y Casca. Toca una zona para ver sus datos.</p>
+      <button type="button" class="sz-fit" data-action="fit" title="Acercar el mapa a las zonas de aluvión">${icon('mapa')}<span>Ver zonas</span></button></div>
+    <p class="sz-intro">Mapas oficiales de Quillcay (Huaraz e Independencia) y Casca. Toca una zona o un punto para ver sus datos.</p>
     <p class="sz-stats" role="status" aria-live="polite"></p>
     <form class="sz-form" novalidate>
       <label class="sz-search">${icon('search')}<input type="search" name="q" placeholder="Buscar: ZS-12, refugio, Casca…" aria-label="Buscar zona o lugar" autocomplete="off"></label>
       <ul class="sz-results" hidden></ul>
-      <fieldset><legend>Mapa de origen</legend>${BASINS.map((b) => check('basin', b.id, filters.basins.includes(b.id), esc(b.label))).join('')}</fieldset>
-      <fieldset><legend>Nivel de peligro</legend><div class="sz-levels">${HAZARD_LEVELS.map((l) =>
-        check(
+      <fieldset><legend>Mapa de origen</legend><div class="sz-pills">${BASINS.map((b) => pill('basin', b.id, filters.basins.includes(b.id), esc(b.label))).join('')}</div></fieldset>
+      <fieldset><legend>Nivel de peligro</legend><div class="sz-pills">${HAZARD_LEVELS.map((l) =>
+        pill(
           'level',
           l.id,
           filters.levels.includes(l.id),
           `<i style="background:${l.color}"></i>${esc(l.label)}`,
         ),
       ).join('')}</div></fieldset>
-      <fieldset><legend>Lugares seguros</legend><div class="sz-kinds">${SAFE_KINDS.map((k) =>
-        check(
+      <fieldset><legend>Lugares seguros</legend><div class="sz-pills">${SAFE_KINDS.map((k) =>
+        pill(
           'kind',
           k.id,
           filters.kinds.includes(k.id),
@@ -110,11 +113,11 @@ export function mountPanel(
         ),
       ).join('')}</div></fieldset>
       <fieldset><legend>Más filtros</legend>
-        <label class="sz-select"><span>Tiempo máximo de evacuación</span><select name="evac">
+        <label class="sz-select"><span>Evacuación máxima <small>(solo zonas de Casca)</small></span><select name="evac">
           <option value="">Cualquiera</option>${EVAC_STEPS.map((m) => `<option value="${m}"${filters.maxEvacMin === m ? ' selected' : ''}>Hasta ${m} min</option>`).join('')}
-        </select><small>Solo las zonas de Casca indican este tiempo.</small></label>
+        </select></label>
         ${check('only', 'independencia', filters.onlyIndependencia, 'Solo en el distrito de Independencia')}
-        ${check('exposed', 'on', filters.exposed, `Elementos expuestos de Casca <small>${EXPOSED_KINDS.map((k) => `<i class="dot" style="background:${k.color}"></i>${esc(k.label.toLowerCase())}`).join(' ')}</small>`)}
+        ${check('exposed', 'on', filters.exposed, `Elementos expuestos de Casca <span class="sz-exposed">${EXPOSED_KINDS.map((k) => `<small><i class="dot" style="background:${k.color}"></i>${esc(k.label.toLowerCase())}</small>`).join('')}</span>`)}
       </fieldset>
       <button type="button" class="btn btn-ghost sz-reset" data-action="reset">Restablecer filtros</button>
     </form>`;

@@ -1122,8 +1122,34 @@
   color: var(--ink-2);
 }
 
+/* the two district cards under the map share one height */
+.row-pair {
+  align-self: stretch;
+}
+
+.row-pair > .card {
+  height: 100%;
+}
+
+/* side by side (wide screens), the map grows to the height of its filter panel: no empty space */
+@media (min-width: 1200px) {
+  .row-fill {
+    align-self: stretch;
+  }
+  .row-fill > .map-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .row-fill > .map-card .map {
+    flex: 1;
+    height: auto;
+  }
+}
+
 .sz-card .card-h {
-  margin-bottom: 8px;
+  flex-wrap: nowrap;
+  margin-bottom: 6px;
 }
 
 .sz-fit {
@@ -1152,8 +1178,8 @@
 }
 
 .sz-stats {
-  margin: 12px 0 16px;
-  padding: 10px 14px;
+  margin: 10px 0 12px;
+  padding: 8px 12px;
   border-radius: var(--r-sm);
   background: var(--surface-2);
   font-size: var(--t-sm);
@@ -1162,7 +1188,7 @@
 
 .sz-form {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .sz-form fieldset {
@@ -1187,7 +1213,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 32px;
+  min-height: 30px;
   font-size: var(--t-sm);
   cursor: pointer;
 }
@@ -1216,17 +1242,63 @@
   font-size: var(--t-xs);
 }
 
-.sz-kinds small:last-child {
-  margin-left: auto;
+/* pill toggles (source map, hazard level): a checkbox drawn as a chip */
+.sz-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.sz-levels {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px 12px;
+.sz-pill {
+  position: relative;
+  cursor: pointer;
 }
 
-.sz-levels i,
+.sz-pill input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sz-pill span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-pill);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+/* off: dashed and dimmed; on: filled */
+.sz-pill input:not(:checked) + span i {
+  opacity: 0.3;
+}
+
+.sz-pill input:checked + span {
+  border: 1px solid var(--surface-2);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.sz-pill small {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.sz-pill:hover span {
+  border-color: var(--ink-3);
+}
+
+.sz-pill input:focus-visible + span {
+  outline: 2px solid var(--dark);
+  outline-offset: 2px;
+}
+
+.sz-pill i,
 .sz-form .dot,
 .sz-results .dot {
   display: inline-block;
@@ -1236,9 +1308,25 @@
   border-radius: 50%;
 }
 
-.sz-levels i {
+.sz-pill i {
   border-radius: 3px;
-  opacity: 0.75;
+}
+
+.sz-exposed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.sz-exposed small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sz-exposed .dot {
+  width: 8px;
+  height: 8px;
 }
 
 .sz-search {
@@ -1346,6 +1434,7 @@
 
 .sz-select small {
   font-size: var(--t-xs);
+  font-weight: 400;
   color: var(--ink-3);
 }
 
