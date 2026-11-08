@@ -1103,3 +1103,360 @@
     padding: 12px 16px 14px;
   }
 }
+
+/* ---------- Mapa: alluvion safe zones ---------- */
+.sw-zone {
+  background: #13a99a;
+  box-shadow: inset 0 0 0 1.5px #0b5e55;
+}
+
+.sw-route {
+  height: 0;
+  border-top: 3px dashed #3f9b22;
+  border-radius: 0;
+  background: none;
+}
+
+.legend-k {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.sz-card .card-h {
+  margin-bottom: 8px;
+}
+
+.sz-fit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--lime);
+  color: var(--lime-ink);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sz-fit .ic {
+  width: 16px;
+  height: 16px;
+}
+
+.sz-intro {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+.sz-stats {
+  margin: 12px 0 16px;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  font-size: var(--t-sm);
+  font-weight: 500;
+}
+
+.sz-form {
+  display: grid;
+  gap: 14px;
+}
+
+.sz-form fieldset {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.sz-form legend {
+  margin-bottom: 4px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sz-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  font-size: var(--t-sm);
+  cursor: pointer;
+}
+
+.sz-check input,
+.sz-select select {
+  accent-color: var(--dark);
+}
+
+.sz-check input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.sz-check span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.sz-check small {
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+}
+
+.sz-kinds small:last-child {
+  margin-left: auto;
+}
+
+.sz-levels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 12px;
+}
+
+.sz-levels i,
+.sz-form .dot,
+.sz-results .dot {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.sz-levels i {
+  border-radius: 3px;
+  opacity: 0.75;
+}
+
+.sz-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.sz-search .ic {
+  width: 18px;
+  height: 18px;
+  color: var(--ink-3);
+}
+
+.sz-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--ink);
+}
+
+.sz-search:focus-within {
+  outline: 2px solid var(--dark);
+}
+
+.sz-search input:focus {
+  outline: none;
+}
+
+.sz-results {
+  display: grid;
+  gap: 2px;
+  margin: -6px 0 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.sz-results[hidden] {
+  display: none;
+}
+
+.sz-results button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sz-results button:hover,
+.sz-results button:focus-visible {
+  background: var(--surface);
+}
+
+.sz-results button span {
+  display: grid;
+  min-width: 0;
+}
+
+.sz-results b {
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+
+.sz-results small,
+.sz-more {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.sz-more {
+  padding: 6px 10px;
+}
+
+.sz-select {
+  display: grid;
+  gap: 4px;
+  font-size: var(--t-sm);
+}
+
+.sz-select select {
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font: inherit;
+  color: var(--ink);
+}
+
+.sz-select small {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.sz-reset {
+  margin-top: 0;
+  justify-self: start;
+}
+
+/* popups */
+.sz-pop h3 {
+  margin: 2px 0 8px;
+  font-size: var(--t-lg);
+  font-weight: 600;
+}
+
+.sz-pop-k {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sz-pop dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin: 0 0 8px;
+}
+
+.sz-pop dt {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.sz-pop dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.sz-pop-w {
+  margin-bottom: 8px;
+  font-size: var(--t-xs);
+  color: var(--ink-2);
+}
+
+.sz-pop a {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* sources of the alluvion maps */
+.src-map-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.src-map {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 20px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+.src-map h3 {
+  font-size: var(--t-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.src-map-k {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.src-map-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 4px;
+}
+
+.src-map-links .ic {
+  width: 16px;
+  height: 16px;
+}
+
+.src-map-links a:not(.btn) {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.src-maps-note {
+  margin-top: 16px;
+  font-size: var(--t-xs);
+}
+
+@media (max-width: 767px) {
+  .src-map-list {
+    grid-template-columns: 1fr;
+  }
+}

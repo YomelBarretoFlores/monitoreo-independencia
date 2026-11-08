@@ -13,15 +13,17 @@ type Area = Polygon | MultiPolygon;
 type Uid = { uid: number };
 
 export interface SafeZoneData {
-  hazard: FeatureCollection<Area, HazardProps>;
+  hazard: FeatureCollection<Area, HazardProps & Uid>;
   zones: FeatureCollection<Area | Point, ZoneProps & Uid>;
   influence: FeatureCollection<Area, { basin: Basin; zone: string }>;
-  routes: FeatureCollection<LineString | MultiLineString, { basin: Basin }>;
+  routes: FeatureCollection<LineString | MultiLineString, { basin: Basin } & Uid>;
   points: FeatureCollection<Point, PlaceProps & Uid>;
 }
 
-/** Numbers every feature so the map can show a subset with a cheap `in` filter. */
-function withUids<G extends Polygon | MultiPolygon | Point, P>(raw: string): FeatureCollection<G, P & Uid> {
+/** Numbers every feature (uid = index) so the map can show a subset with a cheap `in` filter. */
+function withUids<G extends Area | Point | LineString | MultiLineString, P>(
+  raw: string,
+): FeatureCollection<G, P & Uid> {
   const fc = JSON.parse(raw) as FeatureCollection<G, P & Uid>;
   fc.features.forEach((f, i) => {
     f.properties.uid = i;
@@ -31,10 +33,10 @@ function withUids<G extends Polygon | MultiPolygon | Point, P>(raw: string): Fea
 
 export function loadSafeZoneData(): SafeZoneData {
   return {
-    hazard: JSON.parse(hazardRaw),
+    hazard: withUids<Area, HazardProps>(hazardRaw),
     zones: withUids<Area | Point, ZoneProps>(zonesRaw),
     influence: JSON.parse(influenceRaw),
-    routes: JSON.parse(routesRaw),
+    routes: withUids<LineString | MultiLineString, { basin: Basin }>(routesRaw),
     points: withUids<Point, PlaceProps>(pointsRaw),
   };
 }

@@ -5,7 +5,6 @@ import {
   type IControl,
   type LngLatBoundsLike,
   Map as MapLibre,
-  type MapLayerMouseEvent,
   Marker,
   NavigationControl,
   Popup,
@@ -30,12 +29,29 @@ import {
   riskTileTemplate,
   TERRAIN,
 } from '../lib/maplayers.ts';
+import {
+  DEFAULT_FILTERS,
+  EXPOSED_KINDS,
+  HAZARD_LEVELS,
+  hazardPopup,
+  matchHazard,
+  matchPlace,
+  matchRoute,
+  matchZone,
+  placePopup,
+  SAFE_KINDS,
+  type SafeZoneFilters,
+  zonePopup,
+} from '../lib/safezones.ts';
+import type { SafeZoneData } from '../lib/safezones-data.ts';
 import { icon } from '../ui/icons.ts';
+import { mountPanel, type PanelItem } from './safezones-panel.ts';
 
 // The interactive map (MapLibre GL), loaded on demand by sections/map.ts so the engine and the
 // map data never weigh on the other views. Official layers (IGN districts, ANA rivers) are
 // GeoJSON; base maps, CENEPRED overlays and elevation are tiles. "3D" drapes the base map over
-// real terrain. Choices persist while the page is open.
+// real terrain. The alluvion layers (hazard, safe zones, routes, pins) come from the two
+// GeoPDF maps and are filtered from the side panel. Choices persist while the page is open.
 
 setWorkerUrl(workerUrl);
 
@@ -53,11 +69,21 @@ const LOCALE = {
   'NavigationControl.ZoomOut': 'Alejar',
 };
 
-const state: { base: Basemap['id']; risks: Set<RiskLayer['id']>; threeD: boolean } = {
+const state: {
+  base: Basemap['id'];
+  risks: Set<RiskLayer['id']>;
+  threeD: boolean;
+  filters: SafeZoneFilters;
+} = {
   base: 'oficial',
   risks: new Set(),
   threeD: false,
+  filters: { ...DEFAULT_FILTERS },
 };
+
+/** Parsed once per page, the first time the map opens */
+let data: SafeZoneData | null = null;
+let selectedZone: number | null = null;
 
 let map: MapLibre | null = null;
 let observer: ResizeObserver | null = null;
@@ -138,6 +164,7 @@ function buildStyle(): StyleSpecification {
       paint: { 'raster-opacity': 0.7 },
     });
   }
+  if (data) addSafeZoneLayers(sources, layers, data);
   layers.push(
     {
       id: 'districts-line',
@@ -194,7 +221,214 @@ function buildStyle(): StyleSpecification {
       },
     },
   );
+  layers.push({
+    id: 'sz-points',
+    type: 'circle',
+    source: 'sz-points',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 3.5, 14, 6, 17, 9],
+      'circle-color': PLACE_COLOR,
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 11, 1, 15, 2],
+    },
+  });
   return { version: 8, sources, layers };
+}
+
+// Style types come from MapLibre's own API (its style-spec package is not a direct dependency)
+type Filter = NonNullable<Parameters<MapLibre['setFilter']>[1]>;
+type LayerSpec = StyleSpecification['layers'][number];
+type FillColor = NonNullable<Extract<LayerSpec, { type: 'fill' }>['paint']>['fill-color'];
+type CircleColor = NonNullable<Extract<LayerSpec, { type: 'circle' }>['paint']>['circle-color'];
+
+// 'match' expressions built from the legend lists (TypeScript cannot check a spread tuple)
+const HAZARD_COLOR = [
+  'match',
+  ['get', 'level'],
+  ...HAZARD_LEVELS.flatMap((l) => [l.id, l.color]),
+  '#999999',
+] as unknown as FillColor;
+const PLACE_COLOR = [
+  'match',
+  ['concat', ['get', 'group'], ':', ['get', 'kind']],
+  ...SAFE_KINDS.flatMap((k) => [`seguro:${k.id}`, k.color]),
+  ...EXPOSED_KINDS.flatMap((k) => [`expuesto:${k.id}`, k.color]),
+  '#666666',
+] as unknown as CircleColor;
+const ZONE_COLOR = SAFE_KINDS[0]!.color;
+/** Matches nothing until filters are applied after load */
+const only = (ids: number[]): Filter => ['in', ['get', 'uid'], ['literal', ids]];
+const NONE = only([]);
+
+function addSafeZoneLayers(
+  sources: StyleSpecification['sources'],
+  layers: StyleSpecification['layers'],
+  d: SafeZoneData,
+): void {
+  sources['sz-hazard'] = { type: 'geojson', data: d.hazard };
+  sources['sz-zones'] = { type: 'geojson', data: d.zones };
+  sources['sz-influence'] = { type: 'geojson', data: d.influence };
+  sources['sz-routes'] = { type: 'geojson', data: d.routes };
+  sources['sz-points'] = { type: 'geojson', data: d.points };
+  layers.push(
+    {
+      id: 'sz-hazard',
+      type: 'fill',
+      source: 'sz-hazard',
+      filter: NONE,
+      paint: { 'fill-color': HAZARD_COLOR, 'fill-opacity': 0.5 },
+    },
+    {
+      id: 'sz-influence',
+      type: 'line',
+      source: 'sz-influence',
+      filter: ['==', ['get', 'zone'], ''],
+      paint: { 'line-color': '#5b1470', 'line-width': 2, 'line-dasharray': [2, 1.5] },
+    },
+    {
+      id: 'sz-zones',
+      type: 'fill',
+      source: 'sz-zones',
+      filter: NONE,
+      paint: { 'fill-color': ZONE_COLOR, 'fill-opacity': 0.6 },
+    },
+    {
+      id: 'sz-zones-line',
+      type: 'line',
+      source: 'sz-zones',
+      filter: NONE,
+      paint: {
+        'line-color': '#0b5e55',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1, 16, 2.5],
+      },
+    },
+    {
+      id: 'sz-selected',
+      type: 'line',
+      source: 'sz-zones',
+      filter: NONE,
+      paint: { 'line-color': '#15171b', 'line-width': 3.5 },
+    },
+    {
+      id: 'sz-routes-casing',
+      type: 'line',
+      source: 'sz-routes',
+      filter: NONE,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#1f5f1a', 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 2.5, 17, 6] },
+    },
+    {
+      id: 'sz-routes',
+      type: 'line',
+      source: 'sz-routes',
+      filter: NONE,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-color': '#7cf03c',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 13, 1.2, 17, 3],
+        'line-dasharray': [2, 1.2],
+      },
+    },
+  );
+}
+
+const uids = <P extends { uid: number }>(fc: { features: { properties: P }[] }, keep: (p: P) => boolean) =>
+  fc.features.filter((f) => keep(f.properties)).map((f) => f.properties.uid);
+
+/** Show only the features the filters keep (one cheap `in` filter per layer, no data re-upload). */
+function applyFilters(m: MapLibre): void {
+  if (!data) return;
+  const f = state.filters;
+  const zones = only(uids(data.zones, (p) => matchZone(p, f)));
+  m.setFilter('sz-hazard', only(uids(data.hazard, (p) => matchHazard(p, f))));
+  m.setFilter('sz-zones', zones);
+  m.setFilter('sz-zones-line', zones);
+  const routes = only(uids(data.routes, (p) => matchRoute(p, f)));
+  m.setFilter('sz-routes', routes);
+  m.setFilter('sz-routes-casing', routes);
+  m.setFilter('sz-points', only(uids(data.points, (p) => matchPlace(p, f))));
+  // a selection hidden by the filters goes away
+  if (selectedZone !== null && !matchZone(data.zones.features[selectedZone]!.properties, f))
+    selectZone(m, null);
+}
+
+function selectZone(m: MapLibre, uid: number | null): void {
+  selectedZone = uid;
+  const id = uid === null ? '' : data!.zones.features[uid]!.properties.id;
+  m.setFilter('sz-selected', only(uid === null ? [] : [uid]));
+  m.setFilter('sz-influence', ['==', ['get', 'zone'], id]);
+}
+
+/** Where a feature's popup and directions point: the pin itself, or inside the zone. */
+const anchorOf = (f: Feature) =>
+  (f.geometry.type === 'Point' ? f.geometry.coordinates : labelPoint(f.geometry)) as [number, number];
+
+let popup: Popup | null = null;
+function openPopup(m: MapLibre, at: [number, number], html: string): void {
+  popup?.remove();
+  popup = new Popup({ maxWidth: '300px' }).setLngLat(at).setHTML(html).addTo(m);
+  popup.on('close', () => {
+    if (popup?.isOpen() === false) selectZone(m, null);
+  });
+}
+
+function showZone(m: MapLibre, uid: number): void {
+  const f = data!.zones.features[uid]!;
+  const [lon, lat] = anchorOf(f);
+  selectZone(m, uid);
+  openPopup(m, [lon, lat], zonePopup(f.properties, lat, lon));
+}
+
+function showPlace(m: MapLibre, uid: number): void {
+  const f = data!.points.features[uid]!;
+  const [lon, lat] = anchorOf(f);
+  openPopup(m, [lon, lat], placePopup(f.properties, lat, lon));
+}
+
+/** From the panel's search results: fly there and open its card. */
+function focusItem(m: MapLibre, item: PanelItem): void {
+  const f = item.kind === 'zone' ? data!.zones.features[item.uid]! : data!.points.features[item.uid]!;
+  const [w, s, e, n] = bboxOf([f]);
+  const done = () => (item.kind === 'zone' ? showZone(m, item.uid) : showPlace(m, item.uid));
+  m.once('moveend', done);
+  if (w === e && s === n) m.flyTo({ center: [w, s], zoom: 17, duration: 900 });
+  else m.fitBounds([w, s, e, n], { padding: 80, maxZoom: 17.5, duration: 900 });
+}
+
+function fitSafeZones(m: MapLibre): void {
+  if (!data) return;
+  const [w, s, e, n] = bboxOf([...data.hazard.features, ...data.points.features]);
+  m.fitBounds([w, s, e, n], { padding: 32, duration: 900 });
+}
+
+/** One click handler: the topmost interactive feature wins. */
+const CLICK_ORDER = ['sz-points', 'lakes', 'gauges', 'quakes', 'sz-zones', 'sz-hazard'];
+function bindClicks(m: MapLibre): void {
+  m.on('click', (e) => {
+    const layers = CLICK_ORDER.filter((id) => m.getLayer(id));
+    const hit = m.queryRenderedFeatures(e.point, { layers });
+    const f = CLICK_ORDER.map((id) => hit.find((h) => h.layer.id === id)).find(Boolean);
+    if (!f) {
+      popup?.remove();
+      selectZone(m, null);
+      return;
+    }
+    const id = f.layer.id;
+    if (id === 'sz-points') return showPlace(m, f.properties.uid as number);
+    if (id === 'sz-zones') return showZone(m, f.properties.uid as number);
+    selectZone(m, null);
+    if (id === 'sz-hazard')
+      return openPopup(
+        m,
+        [e.lngLat.lng, e.lngLat.lat],
+        hazardPopup(data!.hazard.features[f.properties.uid as number]!.properties),
+      );
+    openPopup(m, (f.geometry as Point).coordinates as [number, number], String(f.properties.html));
+  });
+  for (const id of CLICK_ORDER) {
+    m.on('mouseenter', id, () => (m.getCanvas().style.cursor = 'pointer'));
+    m.on('mouseleave', id, () => (m.getCanvas().style.cursor = ''));
+  }
 }
 
 /** District fills give way to whatever sits below them (imagery or a risk raster). */
@@ -347,26 +581,15 @@ function addDistrictLabels(m: MapLibre): void {
   }
 }
 
-function bindPopups(m: MapLibre, layer: string): void {
-  m.on('click', layer, (e: MapLayerMouseEvent) => {
-    const f = e.features?.[0];
-    if (!f) return;
-    new Popup({ maxWidth: '280px' })
-      .setLngLat((f.geometry as Point).coordinates as [number, number])
-      .setHTML(String(f.properties.html))
-      .addTo(m);
-  });
-  m.on('mouseenter', layer, () => (m.getCanvas().style.cursor = 'pointer'));
-  m.on('mouseleave', layer, () => (m.getCanvas().style.cursor = ''));
-}
-
 function ownBounds(): LngLatBoundsLike | null {
   const own = districts.features.find((f) => f.properties?.ubigeo === INDEPENDENCIA);
   return own ? (bboxOf([own]) as [number, number, number, number]) : null;
 }
 
-export function mount(el: HTMLElement): void {
+/** `loadData` parses the safe-zone layers (their own chunk, fetched alongside this one). */
+export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
   unmount();
+  data ??= loadData();
   const bounds = ownBounds();
   const m = new MapLibre({
     container: el,
@@ -400,15 +623,26 @@ export function mount(el: HTMLElement): void {
     threeD.sync();
   };
   addDistrictLabels(m);
-  for (const layer of ['lakes', 'gauges', 'quakes']) bindPopups(m, layer);
+  bindClicks(m);
   trackRiskLoading(m);
   m.on('load', () => {
     // restore the layers chosen earlier in this visit
     setBase(m, state.base);
     for (const r of RISK_LAYERS) if (state.risks.has(r.id)) setRisk(m, r, true);
     if (state.threeD) setThreeD(m, true);
+    applyFilters(m);
     if (pending) update(pending.panel, pending.now);
   });
+  const panelRoot = document.getElementById('sz-panel');
+  if (panelRoot && data)
+    mountPanel(panelRoot, data, state.filters, {
+      onChange: (f) => {
+        state.filters = f;
+        if (m.isStyleLoaded()) applyFilters(m);
+      },
+      onSelect: (item) => focusItem(m, item),
+      onFit: () => fitSafeZones(m),
+    });
   observer = new ResizeObserver(() => m.resize());
   observer.observe(el);
 }
@@ -423,6 +657,8 @@ export function unmount(): void {
   riskStatus = null;
   syncControls = null;
   pending = null;
+  popup = null;
+  selectedZone = null;
 }
 
 let pending: { panel: Panel; now: number } | null = null;

@@ -124,6 +124,10 @@ export function matchPlace(p: PlaceProps, f: SafeZoneFilters): boolean {
   return f.kinds.includes(p.kind as SafeKind) && f.maxEvacMin === null;
 }
 
+/** Casca evacuation routes lead to its zones: they follow the zone filters' basin and kind. */
+export const matchRoute = (p: { basin: Basin }, f: SafeZoneFilters) =>
+  f.basins.includes(p.basin) && f.kinds.includes('zona');
+
 /** Zone ids, kinds and basin names that match a free-text search (accents and case ignored). */
 export function matchesQuery(text: string, query: string): boolean {
   const norm = (s: string) =>

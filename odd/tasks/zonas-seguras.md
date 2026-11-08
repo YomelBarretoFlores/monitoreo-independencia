@@ -18,9 +18,9 @@ Branch: `feat/safe-zones` (from `main` 4df76cc). Delivery: work-unit commits on 
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
 | T1 | S1, S3, S5 | inline | done: `scripts/geopdf/` (georef, casca, huaraz, extract; pinned requirements; unittest 5 OK) → `data/safe-zones/{hazard,zones,influence,routes,points}.geojson` (377 kB, ≈90 kB gz) with provenance; model `src/lib/safezones.ts` + loader; vitest 19 OK (model + data contract) | (this commit) |
-| T2 | S1, S5, S7 | inline | pending: Leaflet → MapLibre (lazy chunk), parity with current layers, 3D terrain toggle | |
-| T3 | S1, S4 | inline | pending: safe-zone layers, filters, details popup | |
-| T4 | S2, S3, S6 | inline | pending: sources block with PDF links and credits | |
+| T2 | S1, S5, S7 | inline | done: MapLibre 6.15.0 in a lazy chunk (prefetched from the nav), same layers/base maps/CENEPRED, 3D (terrarium DEM + sky), hillshade, fullscreen, Spanish UI strings; server serves .mjs (RED→GREEN in api.test.ts); Chrome: 2D/3D, no console errors | d26e172 (type fix of T1: f9a4bfc) |
+| T3 | S1, S4 | inline | done: hazard/zones/influence/routes/pins layers filtered by uid lists from the pure predicates; panel (basin, level, kind, max evacuation time, only Independencia, exposed elements, search, reset, fit); zone/place/hazard popups with directions; data in its own lazy chunk (94 kB gz) | (this commit) |
+| T4 | S2, S3, S6 | inline | done: "Fuentes de los mapas de aluvión" block under the map (author with Independencia, inputs, date, scale, "Ver el PDF" + SINIA page; Casca: "Enlace público al PDF pendiente de confirmar."), README | (this commit) |
 
 Route evidence: no writer trigger (units depend on each other: T3 needs T1 data and T2 engine); all inline.
 
@@ -36,3 +36,4 @@ Route evidence: no writer trigger (units depend on each other: T3 needs T1 data 
   - Casca: georef residual 0.0 m; 37 zones (ZS-24 does not exist in the source table — corrected the earlier "38" told to the user); every zone area matches the table to ±0.002 ha; 30/37 influence areas matched by area (≤5 %, most ≤0.3 %), 7 left without polygon (table value still shown); 19 routes; 25 exposed elements (18 schools, 6 health, 1 stadium); all 37 zones inside the IGN Independencia boundary.
   - Huaraz–Independencia: georef residual 0.39 m; raster 6823×4771 px (0.72 m/px); hazard vectorized (muy alto 182.4 ha, alto 38.0, medio 10.5, bajo 22.0) after masking 5 legend/title panels, nearest-class fill of overlays, thin-white removal and <1 ha speck removal; 37 pins by color (seguridad 14, acopio 6, refugio 6, salud 4, cadáveres 3, comando 2, animales 2) — visually checked on the render; 17 in Independencia, 20 in Huaraz district. Evacuation arrows of this map are not extracted.
   - Credits: no authority names in the app (the PDF names the previous administration; the proposal is for the new mayor); institutions only.
+- L4 (2026-11-08) T2–T4 evidence: vitest 146 OK, typecheck clean, build: main 48 kB gz, map engine 300 kB gz, safe-zone data 94 kB gz (both lazy; not requested on #resumen). Chrome desktop: hazard/pins placed on the right river banks; search "zs-1" → flies to ZS-1, card with table values and influence outline; 3D satellite over terrain; filters: only Independencia → 17 pins, ≤10 min → 2 zones, reset restores 37/37. Phone width (375 px iframe): no horizontal scroll, Capas collapsed, map 502 px. The T1 commit had two type errors (not typechecked before committing) → fixed in f9a4bfc.

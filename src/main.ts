@@ -13,7 +13,14 @@ import { renderEarthquakes, renderEmergencies } from './sections/emergencies.ts'
 import { renderElNino } from './sections/elnino.ts';
 import { renderLakes } from './sections/lakes.ts';
 import { bindManagement, renderManagement } from './sections/management.ts';
-import { mountMap, prefetchMap, renderMapLegend, unmountMap, updateMap } from './sections/map.ts';
+import {
+  mountMap,
+  prefetchMap,
+  renderMapLegend,
+  renderMapSources,
+  unmountMap,
+  updateMap,
+} from './sections/map.ts';
 import { bindNews, renderLegal, renderNews } from './sections/news.ts';
 import { renderRivers } from './sections/rivers.ts';
 import { renderSources } from './sections/sources.ts';
@@ -42,6 +49,7 @@ const RENDERERS: Record<string, Renderer> = {
   emergencies: renderEmergencies,
   earthquakes: renderEarthquakes,
   map: renderMapLegend,
+  mapSources: renderMapSources,
   news: renderNews,
   legal: renderLegal,
   management: renderManagement,
