@@ -39,6 +39,7 @@ const SECURITY_HEADERS = {
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.json': 'application/json; charset=utf-8',
@@ -52,7 +53,17 @@ const TYPES: Record<string, string> = {
   '.txt': 'text/plain; charset=utf-8',
   '.webmanifest': 'application/manifest+json',
 };
-const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.svg', '.json', '.geojson', '.txt', '.webmanifest']);
+const COMPRESSIBLE = new Set([
+  '.html',
+  '.js',
+  '.mjs',
+  '.css',
+  '.svg',
+  '.json',
+  '.geojson',
+  '.txt',
+  '.webmanifest',
+]);
 
 /** Whether the client accepts an encoding (ignoring q=0) */
 function accepts(req: IncomingMessage, enc: string): boolean {

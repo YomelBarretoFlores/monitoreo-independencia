@@ -80,21 +80,12 @@ export const RISK_LAYERS: readonly RiskLayer[] = [
 export const RISK_CREDIT =
   'Susceptibilidad: <a href="https://sigrid.cenepred.gob.pe/" target="_blank" rel="noopener">CENEPRED</a>, escenario El Niño 2027';
 
-/** Half the Web Mercator world width in meters */
-const E = 20037508.342789244;
-
-/** [minX, minY, maxX, maxY] in EPSG:3857 of an XYZ tile (y counted from the top). */
-export function tileBbox3857(x: number, y: number, z: number): [number, number, number, number] {
-  const size = (2 * E) / 2 ** z;
-  const minX = -E + x * size;
-  const maxY = E - y * size;
-  return [minX, maxY - size, minX + size, maxY];
-}
-
-/** CENEPRED's map service has no tile cache or WMS: each tile is one export request. */
-export function riskTileUrl(layer: number, x: number, y: number, z: number): string {
+/**
+ * CENEPRED's map service has no tile cache or WMS: each tile is one export request.
+ * MapLibre fills `{bbox-epsg-3857}` with the tile's Web Mercator bounds.
+ */
+export function riskTileTemplate(layer: number): string {
   const q = new URLSearchParams({
-    bbox: tileBbox3857(x, y, z).join(','),
     bboxSR: '3857',
     imageSR: '3857',
     size: '256,256',
@@ -103,5 +94,18 @@ export function riskTileUrl(layer: number, x: number, y: number, z: number): str
     format: 'png32',
     f: 'image',
   });
-  return `${CENEPRED}/export?${q}`;
+  // the placeholder must stay literal (URLSearchParams would escape its braces)
+  return `${CENEPRED}/export?bbox={bbox-epsg-3857}&${q}`;
 }
+
+/** Elevation for the 3D view: AWS Terrain Tiles (Mapzen terrarium encoding, public, no key). */
+export const TERRAIN = {
+  tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+  encoding: 'terrarium' as const,
+  tileSize: 256,
+  maxzoom: 15,
+  attribution:
+    'Relieve: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles</a> (Mapzen, AWS)',
+  /** Vertical exaggeration: the valley floor reads better slightly stretched */
+  exaggeration: 1.4,
+};

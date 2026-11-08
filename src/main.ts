@@ -13,7 +13,7 @@ import { renderEarthquakes, renderEmergencies } from './sections/emergencies.ts'
 import { renderElNino } from './sections/elnino.ts';
 import { renderLakes } from './sections/lakes.ts';
 import { bindManagement, renderManagement } from './sections/management.ts';
-import { mountMap, renderMapLegend, unmountMap, updateMap } from './sections/map.ts';
+import { mountMap, prefetchMap, renderMapLegend, unmountMap, updateMap } from './sections/map.ts';
 import { bindNews, renderLegal, renderNews } from './sections/news.ts';
 import { renderRivers } from './sections/rivers.ts';
 import { renderSources } from './sections/sources.ts';
@@ -238,6 +238,12 @@ function start(): void {
   $('#menu-open')?.addEventListener('click', () => setDrawer(true));
   $('#menu-close')?.addEventListener('click', () => setDrawer(false));
   $('#scrim')?.addEventListener('click', () => setDrawer(false));
+  // fetch the map engine as soon as the pointer or focus reaches the Mapa link
+  const prefetch = (e: Event) => {
+    if ((e.target as Element | null)?.closest?.('a[href="#mapa"]')) prefetchMap();
+  };
+  $('#nav')?.addEventListener('pointerover', prefetch, { passive: true });
+  $('#nav')?.addEventListener('focusin', prefetch);
   $('#nav')?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('a')) setDrawer(false);
   });

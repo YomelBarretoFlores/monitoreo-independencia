@@ -1,25 +1,18 @@
-// Map layers: base map choices and the CENEPRED risk overlays (ArcGIS export per tile).
+// Map layers: base map choices, the CENEPRED risk overlays (ArcGIS export per tile) and terrain.
 import { describe, expect, it } from 'vitest';
-import { BASEMAPS, RISK_LAYERS, riskTileUrl, tileBbox3857 } from '../../src/lib/maplayers.ts';
+import { BASEMAPS, RISK_LAYERS, riskTileTemplate, TERRAIN } from '../../src/lib/maplayers.ts';
 
-const E = 20037508.342789244;
-
-describe('tileBbox3857', () => {
-  it('covers the whole world at zoom 0 and the north-west quarter for tile 0/0 at zoom 1', () => {
-    const z0 = tileBbox3857(0, 0, 0);
-    expect(z0.map((v) => Math.round(v))).toEqual([-E, -E, E, E].map(Math.round));
-    const z1 = tileBbox3857(0, 0, 1);
-    expect(z1.map((v) => Math.round(v))).toEqual([-E, 0, 0, E].map(Math.round));
-  });
-});
-
-describe('riskTileUrl', () => {
-  it('asks CENEPRED for one transparent 256 px PNG of the layer over the tile, in Web Mercator', () => {
-    const url = new URL(riskTileUrl(2, 0, 0, 1));
+describe('riskTileTemplate', () => {
+  it('asks CENEPRED for one transparent 256 px PNG of the layer per tile, in Web Mercator', () => {
+    const template = riskTileTemplate(2);
+    // MapLibre substitutes the literal placeholder with each tile's bounds
+    expect(template).toContain('bbox={bbox-epsg-3857}&');
+    const url = new URL(template.replace('{bbox-epsg-3857}', '0,0,1,1'));
     expect(url.origin + url.pathname).toBe(
       'https://sigrid.cenepred.gob.pe/arcgis/rest/services/FEN/ER_NINO2027_BD/MapServer/export',
     );
-    expect(Object.fromEntries(url.searchParams)).toMatchObject({
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      bbox: '0,0,1,1',
       layers: 'show:2',
       bboxSR: '3857',
       imageSR: '3857',
@@ -28,9 +21,16 @@ describe('riskTileUrl', () => {
       format: 'png32',
       f: 'image',
     });
-    expect(url.searchParams.get('bbox')!.split(',').map(Number).map(Math.round)).toEqual(
-      [-E, 0, 0, E].map(Math.round),
-    );
+  });
+});
+
+describe('TERRAIN', () => {
+  it('uses keyless terrarium elevation tiles with an attribution', () => {
+    expect(TERRAIN.tiles).toEqual([
+      'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png',
+    ]);
+    expect(TERRAIN.encoding).toBe('terrarium');
+    expect(TERRAIN.attribution).toMatch(/Terrain Tiles/);
   });
 });
 

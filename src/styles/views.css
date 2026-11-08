@@ -800,28 +800,58 @@
   font-size: var(--t-xs);
 }
 
-.map.leaflet-container {
+.map.maplibregl-map {
   font-family: var(--font);
-  background: var(--surface-2);
 }
 
-.leaflet-tooltip.map-label {
-  padding: 0;
-  border: 0;
-  background: none;
-  box-shadow: none;
+.map.is-loading {
+  background: var(--surface-2) var(--hatch);
+}
+
+.map-error {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+  color: var(--ink-2);
+}
+
+/* fullscreen keeps the card (map + legend) on screen for presenting */
+.map-card:fullscreen {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+}
+
+.map-card:fullscreen .map {
+  flex: 1;
+  height: auto;
+}
+
+/* district names: DOM markers over the map */
+.map-label {
   font-size: 11px;
   color: var(--ink-3);
+  pointer-events: none;
+  white-space: nowrap;
 }
 
-.leaflet-tooltip.map-label::before {
-  display: none;
-}
-
-.leaflet-tooltip.map-label-own {
+.map-label-own {
   font-size: 13px;
   font-weight: 600;
   color: var(--lime-ink);
+}
+
+.map-3d {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.maplibregl-ctrl-group button.map-3d[aria-pressed='true'] {
+  background: var(--dark);
+  color: var(--lime);
 }
 
 /* layers panel (top right of the map) */
@@ -1015,17 +1045,17 @@
   display: none;
 }
 
-.has-base .leaflet-tooltip.map-label:not(.map-label-own) {
+.has-base .map-label:not(.map-label-own) {
   display: none;
 }
 
 /* district names over satellite imagery */
-.is-dark .leaflet-tooltip.map-label {
+.is-dark .map-label {
   color: #fff;
   text-shadow: 0 0 3px rgb(0 0 0 / 0.8);
 }
 
-.is-dark .leaflet-tooltip.map-label-own {
+.is-dark .map-label-own {
   color: var(--lime);
 }
 
@@ -1046,20 +1076,21 @@
   accent-color: var(--dark);
 }
 
-.leaflet-bar,
-.leaflet-touch .leaflet-bar {
-  border: 0;
+.maplibregl-ctrl-group:not(:empty) {
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 1px 2px rgb(20 22 26 / 0.12);
 }
 
-.leaflet-popup-content-wrapper {
+.maplibregl-popup-content {
+  padding: 12px 14px;
   border-radius: var(--r-sm);
-  box-shadow: 0 2px 8px rgb(27 30 35 / 0.12);
+  box-shadow: 0 2px 8px rgb(27 30 35 / 0.14);
+  font-family: var(--font);
+  font-size: var(--t-sm);
 }
 
-.leaflet-container .leaflet-control-attribution {
+.maplibregl-ctrl-attrib {
   font-size: 11px;
 }
 

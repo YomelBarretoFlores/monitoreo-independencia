@@ -67,6 +67,7 @@ beforeAll(async () => {
   mkdirSync(join(dist, 'assets'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html><title>Monitoreo</title>');
   writeFileSync(join(dist, 'assets', 'app-abc.js'), 'console.log(1)'.repeat(200));
+  writeFileSync(join(dist, 'assets', 'worker-abc.mjs'), 'self.onmessage=()=>{};'.repeat(100));
   const handler = createHandler({ db, collectors, staticData: loadStaticData(), dist });
   server = createServer((req, res) => void handler(req, res));
   await new Promise<void>((r) => server.listen(0, r));
@@ -212,5 +213,14 @@ describe('other routes', () => {
     expect(await page.text()).toContain('<title>Monitoreo</title>');
     expect((await fetch(`${base}/assets/no-existe.js`)).status).toBe(404);
     expect((await fetch(`${base}/../package.json`)).status).not.toBe(200);
+  });
+
+  it('serves .mjs (the map worker) as compressible JavaScript, so nosniff browsers run it', async () => {
+    const res = await fetch(`${base}/assets/worker-abc.mjs`, { headers: { 'Accept-Encoding': 'gzip' } });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toMatch(/^text\/javascript/);
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('content-encoding')).toBe('gzip');
+    expect(res.headers.get('cache-control')).toMatch(/immutable/);
   });
 });
