@@ -54,3 +54,10 @@ Branch: `feat/3d-showcase` (continues showcase-3d). Delivery: work-unit commits;
 - L7 (2026-11-08, user, verbatim): "Bien, todo correcto entonces?, sobre la página de fuentes, están todas?, por ejemplo creo que usaste OSIPTEL incluso. Y sobre el mapa, cuando haga hover sobre los controles quisiera que salga como un tooltip para que el usuario sepa para qué sirve. Y haz eliminado todo lo que generaste con la skill de teardown cierto? Y creo que colocar pausa la simulación a veces se traba, revisa eso también."
 - L8: The pause bug was missed by the earlier smoke run because Playwright's click() presses and releases instantly. The new probe holds the press for 90 ms, as a person does.
 - L9: Second independent verifier (S10, S11 and S13 pass; S12 failed): `sims/palcacocha-shared/__pycache__/score.cpython-313.pyc` was left on disk, ignored by git. Removed `sims/` entirely. Advisory fixed: the ANA link now points to the RiosQuebradas layer, not the server's IIS default page. Advisories left: the Casca GeoPDF has no public link yet (data); the strip's scenario buttons keep native titles (outside the map controls).
+- L10 (2026-11-08, user, verbatim): "Bien, ahora primero verifica que toda la web sea responsiva. Si lo es entonces une la rama, subes y despliegas a prod."
+- L11: Responsive check, Playwright, every route at 360, 390, 768, 1024 and 1440 px, a fresh browser per width. Found and fixed:
+  - `#gestion` KPI tiles overflowed at 360, 390 and 768 px (page 377/360), because the nowrap status chip "Requieren seguimiento" widened the tile. Fixed with `.kpi { min-width: 0 }` and wrapping `.kpi-sub .lv`.
+  - A map tooltip stayed on screen after a tap. It now shows on a mouse hover or `:focus-visible` only.
+  - "Aluvión" or the card used before the map loaded did nothing; it now opens once loaded.
+
+  After the fixes: no page overflow at any width. `#resumen` flags only the district SVG's clipped paths (no scroll; the screenshot is fine). Revisiting the map 8+8 times: 0 failures. An earlier "map failed" in the probe was the headless browser's GPU (failed full-page captures), not the app.

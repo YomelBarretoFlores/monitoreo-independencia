@@ -100,6 +100,8 @@ let collapseLayers: (() => void) | null = null;
 let glof: GlofSim | null = null;
 /** Opening the simulation from the card below the map */
 let onGlofOpen: ((e: MouseEvent) => void) | null = null;
+/** "Aluvión" or the card was used before the map finished loading */
+let openGlofOnLoad = false;
 
 const css = (name: string, fallback: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -653,16 +655,18 @@ function bindTooltips(m: MapLibre): void {
     tip.style.right = left ? '' : `${c.right - b.left + 8}px`;
   };
   const hide = () => (tip.hidden = true);
+  // a mouse hover or keyboard focus only: on touch screens a tap has no hover and the tip would stay on
   box.addEventListener('pointerover', (e) => {
     const btn = target(e);
-    if (btn) show(btn);
+    if (btn && e.pointerType === 'mouse') show(btn);
   });
   box.addEventListener('pointerout', (e) => {
     if (target(e) && !target({ target: (e as PointerEvent).relatedTarget } as unknown as Event)) hide();
   });
+  // keyboard focus only (a tap also focuses the button)
   box.addEventListener('focusin', (e) => {
     const btn = target(e);
-    if (btn) show(btn);
+    if (btn?.matches(':focus-visible')) show(btn);
   });
   box.addEventListener('focusout', hide);
   box.addEventListener('pointerdown', hide);
@@ -853,7 +857,11 @@ class GlofControl implements IControl {
     box.className = 'maplibregl-ctrl maplibregl-ctrl-group';
     box.innerHTML = `<button type="button" class="map-glof" aria-pressed="false" aria-label="Simulación de aluvión" data-tip="Simulación de aluvión: cómo bajaría el aluvión de una laguna, sobre el mapa real">${icon('flood')}</button>`;
     box.querySelector('button')!.addEventListener('click', () => {
-      if (!glof) return;
+      // before the map has loaded the simulation does not exist yet: open it as soon as it does
+      if (!glof) {
+        openGlofOnLoad = true;
+        return;
+      }
       if (glof.isOpen) glof.close();
       else glof.open();
       this.sync();
@@ -998,12 +1006,18 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
         },
       });
       resetHooks.add(() => glof?.close());
+      if (openGlofOnLoad) glof.open();
     }
+    openGlofOnLoad = false;
   });
   // the card under the map opens the simulation here
   onGlofOpen = (e) => {
-    if (!(e.target as Element).closest('[data-glof-open]') || !glof) return;
+    if (!(e.target as Element).closest('[data-glof-open]')) return;
     el.closest('.map-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!glof) {
+      openGlofOnLoad = true;
+      return;
+    }
     glof.open();
     syncControls?.();
   };
@@ -1033,6 +1047,7 @@ export function unmount(): void {
   resetHooks.clear();
   if (onGlofOpen) document.removeEventListener('click', onGlofOpen);
   onGlofOpen = null;
+  openGlofOnLoad = false;
   map?.remove();
   map = null;
   ready = false;

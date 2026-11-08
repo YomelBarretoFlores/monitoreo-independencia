@@ -644,6 +644,7 @@
 
 .kpi {
   display: grid;
+  min-width: 0;
   gap: 6px;
   align-content: start;
   padding: 22px 24px;
@@ -677,6 +678,11 @@
 .kpi-sub {
   font-size: var(--t-xs);
   color: var(--ink-3);
+}
+
+/* a status chip inside a narrow tile wraps instead of pushing the tile wider than the screen */
+.kpi-sub .lv {
+  white-space: normal;
 }
 
 /* ---------- callout ---------- */
