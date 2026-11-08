@@ -365,10 +365,17 @@ const anchorOf = (f: Feature) =>
 
 let popup: Popup | null = null;
 function openPopup(m: MapLibre, at: [number, number], html: string): void {
-  popup?.remove();
-  popup = new Popup({ maxWidth: '300px' }).setLngLat(at).setHTML(html).addTo(m);
-  popup.on('close', () => {
-    if (popup?.isOpen() === false) selectZone(m, null);
+  // detach first: Popup.remove() fires 'close', which must not clear the selection being made
+  const previous = popup;
+  popup = null;
+  previous?.remove();
+  const current = new Popup({ maxWidth: '300px' }).setLngLat(at).setHTML(html).addTo(m);
+  popup = current;
+  // only the user closing the popup that is still current clears the zone selection
+  current.on('close', () => {
+    if (popup !== current) return;
+    popup = null;
+    selectZone(m, null);
   });
 }
 
