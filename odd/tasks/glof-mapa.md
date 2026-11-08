@@ -24,7 +24,7 @@ Branch: `feat/3d-showcase` (continues showcase-3d). Delivery: work-unit commits;
 |----|-------|-------|--------|--------|
 | T1 | S8 | inline | done: reproduced dark-on-dark hover on `a.btn` in Chrome; `a:not([class]):hover` + `.btn` text-decoration none; re-hovered: readable | see git log |
 | T2 | S5, S6, S7 | inline | done: `tourStops(centros, 'top'|'all')` (RED→GREEN 2 tests): 10 villages or every centro; tour menu; chip "n de N", "Recorrido terminado…" or "Recorrido detenido."; ResetControl (fitBounds, 3D off, tour stopped, popup closed). Chrome: menu, progress, stop and reset checked; the full-run end notice is pending the T5 smoke run | see git log |
-| T3 | S4 | inline | pending: `scripts/glof/routes.py` → `data/glof/routes.json` + contract test | — |
+| T3 | S4 | inline | done: `scripts/glof/routes.py` → `data/glof/routes.json` (53 KB): Palcacocha 25.7 km, entrance 22.4 km Quillcay; Cuchillacocha 29.0 / 25.7; Tullparaju 28.3 / 25.0; Llaca 14.1 km, entrance 9.4 km into the Casca map; all reach the río Santa. Contract test 4/4 | see git log |
 | T4 | S3, S4 | inline | pending: `src/lib/glof.ts` (lakes, scenarios with ranges, evidence, gradient) + tests | — |
 | T5 | S1, S2, S3, S4 | inline | pending: `src/sections/glof-sim.ts` on the map, control strip, card; retire the teardown page | — |
 | T6 | S1 | inline | optional: record the map version as a video, if the user wants it | — |
