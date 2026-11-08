@@ -84,18 +84,30 @@ describe('3D columns', () => {
 });
 
 describe('camera tour', () => {
-  const stops = tourStops(data.centros);
-
-  it('goes from the urban centre to the villages with the largest gaps and ends at the lake', () => {
+  it('by default visits the casco urbano, the 10 rural villages with the largest gaps, then the lake', () => {
+    const stops = tourStops(data.centros);
+    expect(stops).toHaveLength(12);
     expect(stops[0]!.label).toContain('Centenario');
     expect(stops.at(-1)!.center).toEqual(LAKE_POINT);
-    const villages = stops.slice(1, -1);
-    expect(villages.length).toBe(3);
-    const ids = villages.map((s) => data.centros.find((c) => c.code === s.code)!);
-    for (const c of ids) {
+    const villages = stops.slice(1, -1).map((s) => data.centros.find((c) => c.code === s.code)!);
+    for (const c of villages) {
       expect(c.district).toBe('independencia');
       expect(c.area).toBe('rural');
+      expect(c.pop).toBeGreaterThanOrEqual(30);
     }
-    expect(ids[0]!.indice).toBeGreaterThanOrEqual(ids[1]!.indice);
+    for (let i = 1; i < villages.length; i++)
+      expect(villages[i - 1]!.indice).toBeGreaterThanOrEqual(villages[i]!.indice);
+  });
+
+  it('can visit every centro poblado of Independencia, largest gap first', () => {
+    const stops = tourStops(data.centros, 'all');
+    const codes = stops.slice(1, -1).map((s) => s.code);
+    const urban = '0201050001';
+    expect(stops[0]!.code).toBe(urban);
+    expect(new Set(codes).size).toBe(codes.length);
+    expect(codes).toHaveLength(independencia.length - 1);
+    expect(codes).not.toContain(urban);
+    // a long tour moves faster between stops
+    expect(stops[1]!.holdMs).toBeLessThan(tourStops(data.centros)[1]!.holdMs);
   });
 });

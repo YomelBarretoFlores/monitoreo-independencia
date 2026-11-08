@@ -131,16 +131,38 @@ export interface TourStop {
   zoom: number;
   pitch: number;
   bearing: number;
+  /** Flight to the stop and pause on it, ms */
+  flyMs: number;
   holdMs: number;
 }
 
-/** Casco urbano → the three rural villages of Independencia with the largest gaps (with people) → Palcacocha */
-export function tourStops(centros: readonly Centro[]): TourStop[] {
-  const urban = centros.find((c) => c.code === '0201050001') ?? centros[0]!;
-  const villages = centros
-    .filter((c) => c.district === 'independencia' && c.area === 'rural' && (c.pop ?? 0) >= 30)
-    .sort((a, b) => b.indice - a.indice)
-    .slice(0, 3);
+export type TourLength = 'top' | 'all';
+export const TOUR_TOP = 10;
+const URBAN_CODE = '0201050001';
+
+const centroStop = (c: Centro, i: number, fast: boolean): TourStop => ({
+  label: `${c.area === 'urbano' ? 'Centro poblado' : 'Caserío'} · ${c.name} · índice ${fmtNum(c.indice)}`,
+  title: c.name,
+  code: c.code,
+  center: [c.lon, c.lat],
+  zoom: 14.2,
+  pitch: 66,
+  bearing: 20 + ((i * 35) % 360),
+  flyMs: fast ? 2600 : 5200,
+  holdMs: fast ? 900 : 3500,
+});
+
+/**
+ * Casco urbano → Independencia's villages ordered by gap → Palcacocha.
+ * 'top': the 10 rural villages with the largest gaps (with at least 30 people); 'all': every centro poblado.
+ */
+export function tourStops(centros: readonly Centro[], length: TourLength = 'top'): TourStop[] {
+  const urban = centros.find((c) => c.code === URBAN_CODE) ?? centros[0]!;
+  const own = centros.filter((c) => c.district === 'independencia' && c.code !== urban.code);
+  const picked = length === 'all' ? own : own.filter((c) => c.area === 'rural' && (c.pop ?? 0) >= 30);
+  const ordered = [...picked].sort((a, b) => b.indice - a.indice || a.code.localeCompare(b.code));
+  const villages = length === 'all' ? ordered : ordered.slice(0, TOUR_TOP);
+  const fast = length === 'all';
   return [
     {
       label: `Casco urbano · ${urban.name}`,
@@ -150,18 +172,10 @@ export function tourStops(centros: readonly Centro[]): TourStop[] {
       zoom: 13.6,
       pitch: 62,
       bearing: -25,
+      flyMs: 5200,
       holdMs: 4000,
     },
-    ...villages.map((c, i): TourStop => ({
-      label: `Caserío · ${c.name} · índice ${fmtNum(c.indice)}`,
-      title: c.name,
-      code: c.code,
-      center: [c.lon, c.lat],
-      zoom: 14.2,
-      pitch: 66,
-      bearing: 20 + i * 35,
-      holdMs: 3500,
-    })),
+    ...villages.map((c, i) => centroStop(c, i, fast)),
     {
       label: 'Laguna Palcacocha',
       title: 'Laguna Palcacocha',
@@ -169,6 +183,7 @@ export function tourStops(centros: readonly Centro[]): TourStop[] {
       zoom: 13.4,
       pitch: 70,
       bearing: 40,
+      flyMs: 5200,
       holdMs: 4500,
     },
   ];

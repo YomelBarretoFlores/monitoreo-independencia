@@ -1818,3 +1818,49 @@
   font-size: 11px;
   color: var(--ink-3);
 }
+
+.map-reset .ic {
+  width: 16px;
+  height: 16px;
+}
+
+.map-tour-menu {
+  position: absolute;
+  top: 12px;
+  left: 54px;
+  z-index: 4;
+  display: grid;
+  gap: 4px;
+  width: min(280px, calc(100% - 70px));
+  padding: 10px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: 0 2px 10px rgb(20 22 26 / 0.14);
+  font-size: var(--t-xs);
+}
+
+.map-tour-menu[hidden] {
+  display: none;
+}
+
+.map-tour-menu p {
+  margin: 0 4px 2px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.map-tour-menu button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-tour-menu button:hover {
+  background: var(--line);
+}

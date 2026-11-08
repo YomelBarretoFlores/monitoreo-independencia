@@ -44,7 +44,7 @@ import {
   type SafeZoneFilters,
   zonePopup,
 } from '../lib/safezones.ts';
-import { centroPopup, GAP_STOPS, toColumns, tourStops } from '../lib/centros.ts';
+import { centroPopup, GAP_STOPS, toColumns, TOUR_TOP, type TourLength, tourStops } from '../lib/centros.ts';
 import type { SafeZoneData } from '../lib/safezones-data.ts';
 import { icon } from '../ui/icons.ts';
 import { mountPanel, type PanelItem } from './safezones-panel.ts';
@@ -546,8 +546,19 @@ function setColumns(m: MapLibre, on: boolean): void {
 }
 
 let tourRun = 0;
-/** Fly the camera over the casco urbano, the villages with the largest gaps and Palcacocha; any input stops it. */
-async function runTour(m: MapLibre, chip: HTMLElement): Promise<void> {
+/** Stops the camera tour (and, from glof-sim, the flood animation) without touching the layers. */
+const stopTour = () => void tourRun++;
+let chipTimer: ReturnType<typeof setTimeout> | undefined;
+/** Show a message in the tour chip; `holdMs` hides it again after that long. */
+function say(chip: HTMLElement, text: string, holdMs?: number): void {
+  clearTimeout(chipTimer);
+  chip.textContent = text;
+  chip.hidden = false;
+  if (holdMs) chipTimer = setTimeout(() => (chip.hidden = true), holdMs);
+}
+
+/** Fly over the casco urbano, Independencia's villages ordered by gap and Palcacocha; any input stops it. */
+async function runTour(m: MapLibre, chip: HTMLElement, length: TourLength): Promise<void> {
   if (!data) return;
   const run = ++tourRun;
   if (!state.columns) setColumns(m, true);
@@ -564,17 +575,18 @@ async function runTour(m: MapLibre, chip: HTMLElement): Promise<void> {
   for (const ev of events) canvas.addEventListener(ev, stop, { once: true, passive: true });
   const live = () => tourRun === run && map === m;
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const stops = tourStops(data.centros.centros, length);
+  let done = false;
   try {
-    for (const s of tourStops(data.centros.centros)) {
+    for (const [i, s] of stops.entries()) {
       if (!live()) break;
-      chip.textContent = s.label;
-      chip.hidden = false;
+      say(chip, `${i + 1} de ${stops.length} · ${s.label}`);
       m.flyTo({
         center: s.center,
         zoom: s.zoom,
         pitch: s.pitch,
         bearing: s.bearing,
-        duration: 5200,
+        duration: s.flyMs,
         essential: true,
       });
       // settle on the flight's end, or when the map goes away mid-flight (remove() fires no moveend)
@@ -584,12 +596,34 @@ async function runTour(m: MapLibre, chip: HTMLElement): Promise<void> {
       });
       if (!live()) break;
       await wait(s.holdMs);
+      done = i === stops.length - 1 && live();
     }
   } finally {
     for (const ev of events) canvas.removeEventListener(ev, stop);
-    chip.hidden = true;
+    if (map === m)
+      say(
+        chip,
+        done
+          ? `Recorrido terminado: ${stops.length} paradas. Usa «Restablecer vista» para volver al inicio.`
+          : 'Recorrido detenido.',
+        done ? 6000 : 2500,
+      );
   }
 }
+
+/** Back to the view the map opened with: Independencia framed, flat, no tour, no popup. */
+function resetView(m: MapLibre): void {
+  stopTour();
+  resetHooks.forEach((fn) => fn());
+  popup?.remove();
+  selectZone(m, null);
+  if (state.threeD) setThreeD(m, false);
+  const bounds = ownBounds();
+  if (bounds) m.fitBounds(bounds, { padding: 24, pitch: 0, bearing: 0, duration: 1200 });
+  syncControls?.();
+}
+/** Other features (the flood animation) register here to stop on a reset */
+const resetHooks = new Set<() => void>();
 
 function setThreeD(m: MapLibre, on: boolean): void {
   state.threeD = on;
@@ -686,11 +720,13 @@ class LayersControl implements IControl {
 class GapControl implements IControl {
   private box: HTMLElement | null = null;
   private legend: HTMLElement | null = null;
+  private menu: HTMLElement | null = null;
+  private chip: HTMLElement | null = null;
   onAdd(m: MapLibre): HTMLElement {
     const box = document.createElement('div');
     box.className = 'maplibregl-ctrl maplibregl-ctrl-group map-cp';
     box.innerHTML = `<button type="button" data-action="columns" aria-pressed="${state.columns}" title="Brechas por centro poblado en 3D">${icon('columns')}</button>
-      <button type="button" data-action="tour" title="Recorrido automático: casco urbano, caseríos y laguna Palcacocha">${icon('play')}</button>`;
+      <button type="button" data-action="tour" aria-expanded="false" aria-controls="map-tour-menu" title="Recorrido automático por los centros poblados">${icon('play')}</button>`;
     const chip = document.createElement('p');
     chip.className = 'map-tour-chip';
     chip.setAttribute('role', 'status');
@@ -701,17 +737,37 @@ class GapControl implements IControl {
     legend.innerHTML = `<p><b>Índice de brechas por centro poblado</b></p>
       <ul>${GAP_STOPS.map(([v, c]) => `<li><i style="background:${c}"></i>${v}</li>`).join('')}</ul>
       <p>Altura: índice (conectividad 4G, colegio y salud pública más cercanos) · ancho: población 2017. Índice simple, no oficial.</p>`;
-    m.getContainer().append(chip, legend);
+    const total = data ? data.centros.centros.filter((c) => c.district === 'independencia').length : 0;
+    const menu = document.createElement('div');
+    menu.className = 'map-tour-menu';
+    menu.id = 'map-tour-menu';
+    menu.hidden = true;
+    menu.innerHTML = `<p>Recorrido automático</p>
+      <button type="button" data-tour="top">Los ${TOUR_TOP} caseríos con más brechas</button>
+      <button type="button" data-tour="all">Todos los centros poblados de Independencia (${total})</button>`;
+    m.getContainer().append(chip, legend, menu);
+    const tourBtn = box.querySelector<HTMLButtonElement>('[data-action="tour"]')!;
+    const showMenu = (on: boolean) => {
+      menu.hidden = !on;
+      tourBtn.setAttribute('aria-expanded', String(on));
+    };
     box.querySelector('[data-action="columns"]')!.addEventListener('click', () => {
       setColumns(m, !state.columns);
       syncControls?.();
     });
-    box.querySelector('[data-action="tour"]')!.addEventListener('click', () => {
-      void runTour(m, chip).then(() => syncControls?.());
+    tourBtn.addEventListener('click', () => showMenu(menu.hidden !== false));
+    menu.addEventListener('click', (e) => {
+      const length = (e.target as Element).closest<HTMLElement>('[data-tour]')?.dataset.tour as
+        TourLength | undefined;
+      if (!length) return;
+      showMenu(false);
+      void runTour(m, chip, length).then(() => syncControls?.());
       syncControls?.();
     });
     this.box = box;
     this.legend = legend;
+    this.menu = menu;
+    this.chip = chip;
     return box;
   }
   sync(): void {
@@ -719,10 +775,26 @@ class GapControl implements IControl {
     if (this.legend) this.legend.hidden = !state.columns;
   }
   onRemove(): void {
+    clearTimeout(chipTimer);
+    for (const el of [this.box, this.legend, this.menu, this.chip]) el?.remove();
+    this.box = this.legend = this.menu = this.chip = null;
+  }
+}
+
+/** "Restablecer vista": back to the initial framing */
+class ResetControl implements IControl {
+  private box: HTMLElement | null = null;
+  onAdd(m: MapLibre): HTMLElement {
+    const box = document.createElement('div');
+    box.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+    box.innerHTML = `<button type="button" class="map-reset" title="Restablecer vista" aria-label="Restablecer vista">${icon('reset')}</button>`;
+    box.querySelector('button')!.addEventListener('click', () => resetView(m));
+    this.box = box;
+    return box;
+  }
+  onRemove(): void {
     this.box?.remove();
-    this.legend?.remove();
     this.box = null;
-    this.legend = null;
   }
 }
 
@@ -792,6 +864,7 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
   m.addControl(threeD, 'top-left');
   const gaps = new GapControl();
   m.addControl(gaps, 'top-left');
+  m.addControl(new ResetControl(), 'top-left');
   m.addControl(new FullscreenControl({ container: el.closest<HTMLElement>('.map-card') ?? el }), 'top-left');
   m.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
   const layersCtl = new LayersControl();
@@ -837,7 +910,7 @@ export function unmount(): void {
   observer = null;
   for (const l of labels) l.remove();
   labels = [];
-  tourRun++;
+  stopTour();
   map?.remove();
   map = null;
   ready = false;
