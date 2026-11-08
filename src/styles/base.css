@@ -52,8 +52,9 @@ a {
   text-underline-offset: 3px;
 }
 
-/* plain text links only: classed anchors (buttons, tiles, skip link) set their own hover colours */
-a:not([class]):hover {
+/* plain text links only: classed anchors (buttons, tiles, skip link) set their own hover colours.
+   :where() keeps the specificity of a plain a:hover, so descendant rules such as .src a still win */
+a:where(:not([class])):hover {
   color: var(--accent-ink);
 }
 

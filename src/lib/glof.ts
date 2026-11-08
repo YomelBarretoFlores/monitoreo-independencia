@@ -53,7 +53,7 @@ export const SOURCES = {
   },
   baer2016: {
     label:
-      'Baer et al., «Modelling a GLOF process chain in the Quillcayhuanca valley (Tullparaju, Cuchillacocha)», EGU General Assembly, EGU2016-6536',
+      'Baer et al., «Modelling cascading and erosional processes for glacial lake outburst floods in the Quillcay catchment, Huaraz, Cordillera Blanca, Peru», EGU General Assembly, EGU2016-6536',
     url: 'https://meetingorganizer.copernicus.org/EGU2016/EGU2016-6536.pdf',
     year: 2016,
   },
@@ -92,7 +92,7 @@ export const SOURCES = {
   nasa2003: {
     label:
       'NASA Earth Observatory, «Glacial Collapse Threatens Huaraz, Peru» (pronóstico ante una posible caída de hielo)',
-    url: 'https://www.earthobservatory.nasa.gov/images/3343/glacial-collapse-threatens-huaraz-peru',
+    url: 'https://science.nasa.gov/earth/earth-observatory/glacial-collapse-threatens-huaraz-peru-3343/',
     year: 2003,
   },
   terrain: {

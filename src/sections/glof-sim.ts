@@ -272,6 +272,17 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
       frontM = st.frontM;
       reveal = cityRevealAt(s, t);
       const range = s.entrance.rangeH;
+      // minutes left, as the published range when the source gives one (never an unpublished midpoint alone)
+      const leftMin = (h: number) => Math.max(0, Math.ceil(h * 60 - t / 60));
+      const left = range
+        ? leftMin(range[1]) <= 0
+          ? 'llegó'
+          : leftMin(range[0]) > 0
+            ? `${fmtNum(leftMin(range[0]))}–${fmtNum(leftMin(range[1]))} min`
+            : `hasta ${fmtNum(leftMin(range[1]))} min`
+        : st.minutesToCity > 0
+          ? `${fmtNum(Math.ceil(st.minutesToCity))} min`
+          : 'llegó';
       const cityText = range
         ? `${minutes(range[0])}–${minutes(range[1])} min`
         : `${minutes(s.entrance.frontH)} min`;
@@ -280,7 +291,7 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
         <span><small>Recorrido</small><b>${fmtNum(frontM / 1000, 1)} / ${fmtNum(r.lengthM / 1000, 1)} km</b></span>
         <span><small>Caudal pico en el frente</small><b>${frontM > 0 ? `${fmtNum(st.dischargeM3s)} m³/s` : '—'}</b></span>
         <span><small>Llegada a la ciudad (publicado)</small><b>${cityText}</b></span>
-        <span><small>Falta para la ciudad</small><b class="${st.minutesToCity > 0 && st.minutesToCity <= WARNING.minutes ? 'gs-hot' : ''}">${t < 0 ? '—' : st.minutesToCity > 0 ? `${fmtNum(Math.ceil(st.minutesToCity))} min` : 'llegó'}</b></span>`;
+        <span><small>Falta para la ciudad</small><b class="${st.minutesToCity > 0 && st.minutesToCity <= WARNING.minutes ? 'gs-hot' : ''}">${t < 0 ? '—' : left}</b></span>`;
     } else if (r && animated()) {
       const p = Math.min(1, t / UNTIMED_S);
       frontM = p * r.lengthM;

@@ -2139,3 +2139,13 @@
   left: auto;
   right: 0;
 }
+
+.gs-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--dark);
+}
+
+.gs-time input {
+  height: 28px;
+}
