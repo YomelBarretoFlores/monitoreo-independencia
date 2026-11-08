@@ -118,6 +118,7 @@ export function centroPopup(c: Centro): string {
       ${row('Colegio más cercano', `${fmtNum(c.schoolKm, 1)} km`)}
       ${row('Salud pública más cercana', `${fmtNum(c.healthKm, 1)} km`)}
     </ul>
+    <p class="cp-src">Fuentes: OSIPTEL (2025), INEI (Censos 2017), MINEDU ESCALE y SUSALUD RENIPRESS (2026). Distancias en línea recta.</p>
   </div>`;
 }
 

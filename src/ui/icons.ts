@@ -10,6 +10,9 @@ const PATHS = {
   nino: '<path d="M10 4.5a2 2 0 0 1 4 0v9.3a4 4 0 1 1-4 0z"/><path d="M12 10v6.5"/><path d="M17.5 6h3M17.5 9.5h2"/>',
   emergencias: '<path d="M3 12h3.5l2-5 3.5 10 2.5-7 1.5 2H21"/>',
   mapa: '<path d="M9 4.5 3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2z"/><path d="M9 4.5v13M15 6.5v13"/>',
+  columns:
+    '<path d="M3.5 20.5h17"/><rect x="5" y="12" width="3.5" height="8.5" rx="0.8"/><rect x="10.25" y="5" width="3.5" height="15.5" rx="0.8"/><rect x="15.5" y="9" width="3.5" height="11.5" rx="0.8"/>',
+  play: '<path d="M8 5.5v13l10.5-6.5z"/>',
   noticias:
     '<path d="M4.5 5.5h12v13a1.5 1.5 0 0 0 1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M16.5 9.5h3v9a1.5 1.5 0 0 1-3 0"/><path d="M7.5 9h6M7.5 12.5h6M7.5 16h4"/>',
   gestion:

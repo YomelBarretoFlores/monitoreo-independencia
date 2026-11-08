@@ -551,6 +551,10 @@ async function runTour(m: MapLibre, chip: HTMLElement): Promise<void> {
   if (!data) return;
   const run = ++tourRun;
   if (!state.columns) setColumns(m, true);
+  else if (!state.threeD) {
+    setThreeD(m, true);
+    syncControls?.();
+  }
   popup?.remove();
   const stop = () => {
     if (tourRun === run) tourRun++;
@@ -573,7 +577,11 @@ async function runTour(m: MapLibre, chip: HTMLElement): Promise<void> {
         duration: 5200,
         essential: true,
       });
-      await new Promise<void>((r) => m.once('moveend', () => r()));
+      // settle on the flight's end, or when the map goes away mid-flight (remove() fires no moveend)
+      await new Promise<void>((r) => {
+        m.once('moveend', () => r());
+        m.once('remove', () => r());
+      });
       if (!live()) break;
       await wait(s.holdMs);
     }
@@ -641,12 +649,7 @@ class LayersControl implements IControl {
         ).join(
           '',
         )}<p class="ml-status" role="status" hidden>Cargando la capa de CENEPRED…</p><p class="ml-note">Susceptibilidad para el escenario de lluvias de El Niño 2027.</p></fieldset>
-        <fieldset><legend>Brechas por centro poblado</legend>
-          <label class="ml-risk"><input type="checkbox" name="ml-cp" value="columns"${state.columns ? ' checked' : ''}>
-            <span><b>Columnas 3D</b><small>Altura: índice de brechas · ancho: población 2017</small></span></label>
-          <ul class="ml-legend ml-gap">${GAP_STOPS.map(([v, c]) => `<li><i style="background:${c}"></i>${v}</li>`).join('')}</ul>
-          <button type="button" class="ml-tour" data-action="tour">${icon('mapa')}<span>Recorrido automático</span></button>
-          <p class="ml-note">Conectividad 4G, distancia al colegio y a la salud pública (OSIPTEL, MINEDU, SUSALUD, INEI). Índice simple, no oficial.</p></fieldset>
+
       </div>`;
     riskStatus = box.querySelector<HTMLElement>('.ml-status');
     const toggle = box.querySelector<HTMLButtonElement>('.ml-toggle')!;
@@ -655,22 +658,9 @@ class LayersControl implements IControl {
       panel.hidden = !panel.hidden;
       toggle.setAttribute('aria-expanded', String(!panel.hidden));
     });
-    const chip = document.createElement('p');
-    chip.className = 'map-tour-chip';
-    chip.setAttribute('role', 'status');
-    chip.hidden = true;
-    m.getContainer().appendChild(chip);
-    box.querySelector('[data-action="tour"]')!.addEventListener('click', () => {
-      // the panel would cover the view: fold it while the camera flies
-      panel.hidden = true;
-      toggle.setAttribute('aria-expanded', 'false');
-      void runTour(m, chip).then(() => this.sync());
-      this.sync();
-    });
     box.addEventListener('change', (e) => {
       const input = e.target as HTMLInputElement;
       if (input.name === 'ml-base') return setBase(m, input.value as Basemap['id']);
-      if (input.name === 'ml-cp') return setColumns(m, input.checked);
       const r = RISK_LAYERS.find((x) => x.id === input.value);
       if (!r) return;
       setRisk(m, r, input.checked);
@@ -685,12 +675,54 @@ class LayersControl implements IControl {
     this.box
       ?.querySelectorAll<HTMLInputElement>('input[name="ml-base"]')
       .forEach((i) => (i.checked = i.value === state.base));
-    const cp = this.box?.querySelector<HTMLInputElement>('input[name="ml-cp"]');
-    if (cp) cp.checked = state.columns;
   }
   onRemove(): void {
     this.box?.remove();
     this.box = null;
+  }
+}
+
+/** Centros poblados: the 3D gap columns toggle, the camera tour and the columns' legend (kept out of Capas). */
+class GapControl implements IControl {
+  private box: HTMLElement | null = null;
+  private legend: HTMLElement | null = null;
+  onAdd(m: MapLibre): HTMLElement {
+    const box = document.createElement('div');
+    box.className = 'maplibregl-ctrl maplibregl-ctrl-group map-cp';
+    box.innerHTML = `<button type="button" data-action="columns" aria-pressed="${state.columns}" title="Brechas por centro poblado en 3D">${icon('columns')}</button>
+      <button type="button" data-action="tour" title="Recorrido automático: casco urbano, caseríos y laguna Palcacocha">${icon('play')}</button>`;
+    const chip = document.createElement('p');
+    chip.className = 'map-tour-chip';
+    chip.setAttribute('role', 'status');
+    chip.hidden = true;
+    const legend = document.createElement('div');
+    legend.className = 'map-gap-legend';
+    legend.hidden = !state.columns;
+    legend.innerHTML = `<p><b>Índice de brechas por centro poblado</b></p>
+      <ul>${GAP_STOPS.map(([v, c]) => `<li><i style="background:${c}"></i>${v}</li>`).join('')}</ul>
+      <p>Altura: índice (conectividad 4G, colegio y salud pública más cercanos) · ancho: población 2017. Índice simple, no oficial.</p>`;
+    m.getContainer().append(chip, legend);
+    box.querySelector('[data-action="columns"]')!.addEventListener('click', () => {
+      setColumns(m, !state.columns);
+      syncControls?.();
+    });
+    box.querySelector('[data-action="tour"]')!.addEventListener('click', () => {
+      void runTour(m, chip).then(() => syncControls?.());
+      syncControls?.();
+    });
+    this.box = box;
+    this.legend = legend;
+    return box;
+  }
+  sync(): void {
+    this.box?.querySelector('[data-action="columns"]')?.setAttribute('aria-pressed', String(state.columns));
+    if (this.legend) this.legend.hidden = !state.columns;
+  }
+  onRemove(): void {
+    this.box?.remove();
+    this.legend?.remove();
+    this.box = null;
+    this.legend = null;
   }
 }
 
@@ -758,6 +790,8 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
   m.addControl(new NavigationControl({ visualizePitch: true }), 'top-left');
   const threeD = new ThreeDControl();
   m.addControl(threeD, 'top-left');
+  const gaps = new GapControl();
+  m.addControl(gaps, 'top-left');
   m.addControl(new FullscreenControl({ container: el.closest<HTMLElement>('.map-card') ?? el }), 'top-left');
   m.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
   const layersCtl = new LayersControl();
@@ -765,6 +799,7 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
   syncControls = () => {
     layersCtl.sync();
     threeD.sync();
+    gaps.sync();
   };
   addDistrictLabels(m);
   bindClicks(m);
