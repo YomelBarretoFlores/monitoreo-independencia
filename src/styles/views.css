@@ -824,6 +824,211 @@
   color: var(--lime-ink);
 }
 
+/* layers panel (top right of the map) */
+.map-layers {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  max-width: min(300px, calc(100vw - 72px));
+  font-family: var(--font);
+}
+
+.ml-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--dark);
+  color: var(--on-dark);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgb(20 22 26 / 0.2);
+}
+
+.ml-toggle .ic {
+  width: 18px;
+  height: 18px;
+}
+
+.ml-panel {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 2px 10px rgb(20 22 26 / 0.14);
+}
+
+.ml-panel[hidden] {
+  display: none;
+}
+
+.ml-panel fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.ml-panel legend {
+  margin-bottom: 8px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.ml-seg {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+
+.ml-seg label {
+  position: relative;
+  cursor: pointer;
+}
+
+.ml-seg input,
+.ml-risk input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ml-seg span {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.ml-seg input:checked + span {
+  background: var(--dark);
+  color: var(--on-dark);
+}
+
+.ml-seg input:focus-visible + span,
+.ml-risk input:focus-visible + span {
+  outline: 2px solid var(--dark);
+  outline-offset: 2px;
+}
+
+.ml-risk {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  margin-top: 6px;
+}
+
+.ml-risk span {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px 10px 40px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  font-size: var(--t-sm);
+}
+
+.ml-risk span::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.ml-risk input:checked + span {
+  background: var(--lime-soft);
+}
+
+.ml-risk input:checked + span::before {
+  border-color: var(--dark);
+  background: var(--dark)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4f06f' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4 8-9'/%3E%3C/svg%3E")
+    center / 14px no-repeat;
+}
+
+.ml-risk b {
+  font-weight: 600;
+}
+
+.ml-risk small {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.ml-legend-box[hidden] {
+  display: none;
+}
+
+.ml-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 8px 4px 2px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.ml-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ml-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.ml-note {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.ml-status {
+  margin-top: 10px;
+  font-size: var(--t-xs);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.ml-status[hidden] {
+  display: none;
+}
+
+.has-base .leaflet-tooltip.map-label:not(.map-label-own) {
+  display: none;
+}
+
+/* district names over satellite imagery */
+.is-dark .leaflet-tooltip.map-label {
+  color: #fff;
+  text-shadow: 0 0 3px rgb(0 0 0 / 0.8);
+}
+
+.is-dark .leaflet-tooltip.map-label-own {
+  color: var(--lime);
+}
+
 .map-toggle {
   display: flex;
   align-items: center;
