@@ -90,7 +90,8 @@ export const SOURCES = {
     year: 2016,
   },
   nasa2003: {
-    label: 'NASA Earth Observatory, «Glacial Collapse Threatens Huaraz, Peru» (pronóstico ante una posible caída de hielo)',
+    label:
+      'NASA Earth Observatory, «Glacial Collapse Threatens Huaraz, Peru» (pronóstico ante una posible caída de hielo)',
     url: 'https://www.earthobservatory.nasa.gov/images/3343/glacial-collapse-threatens-huaraz-peru',
     year: 2003,
   },
@@ -520,3 +521,59 @@ export const ARRIVAL_EVIDENCE: readonly {
     source: 'nasa2003',
   },
 ];
+
+/** One vertex of a flow route: [lon, lat, elevation m, distance from the lake m] (data/glof/routes.json) */
+export type RoutePoint = [number, number, number, number];
+
+export interface LakeRoute {
+  name: string;
+  path: RoutePoint[];
+  lengthM: number;
+  /** Where the route enters an official hazard map (the city), m; null if it never does */
+  entranceM: number | null;
+  entranceMap: 'quillcay' | 'casca' | null;
+  reachesSanta: boolean;
+}
+
+/** Index of the segment [i - 1, i] that holds distance d */
+function segmentAt(path: readonly RoutePoint[], d: number): number {
+  let lo = 1;
+  let hi = path.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (path[mid]![3] < d) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/** [lon, lat] at distance d along the route, clamped to its ends */
+export function pointAlong(path: readonly RoutePoint[], d: number): [number, number] {
+  const x = Math.min(Math.max(d, 0), path[path.length - 1]![3]);
+  const i = segmentAt(path, x);
+  const a = path[i - 1]!;
+  const b = path[i]!;
+  const k = b[3] > a[3] ? (x - a[3]) / (b[3] - a[3]) : 0;
+  return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+}
+
+/** Heading of the route at distance d, degrees clockwise from north (-180..180) */
+export function bearingAlong(path: readonly RoutePoint[], d: number): number {
+  const i = segmentAt(path, Math.min(Math.max(d, 0), path[path.length - 1]![3]));
+  const a = path[i - 1]!;
+  const b = path[i]!;
+  const dx = (b[0] - a[0]) * Math.cos((a[1] * Math.PI) / 180);
+  const dy = b[1] - a[1];
+  return (Math.atan2(dx, dy) * 180) / Math.PI;
+}
+
+/** Event seconds after which the animation stops: the río Santa (or the city when the source ends there), plus a pause */
+export const simEnd = (s: Scenario): number =>
+  s.exit ? s.exit.frontH * 3600 + 600 : s.entrance.frontH * 3600 + 1200;
+
+/** Event seconds per real second: slow through the avalanche and the wave, then the whole run in about 70 s */
+export function playRate(s: Scenario, t: number): number {
+  const fast = ((s.exit ?? s.entrance).frontH * 3600) / 70;
+  const k = Math.min(1, Math.max(0, (t - (s.impactS + 30)) / 150));
+  return 6 + (fast - 6) * k * k * (3 - 2 * k);
+}

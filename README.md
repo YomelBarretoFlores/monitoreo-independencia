@@ -21,7 +21,7 @@ gestión municipal (inversiones y contrataciones) y resultados electorales del d
 | Riesgo y población | CENEPRED – escenario FEN 2027 | 24 h |
 | Inversiones, contrataciones, elecciones | Importados de `resultados-ancash` (MEF, Infobras, OECE, ONPE) | fijo |
 | Zonas seguras ante aluvión | GeoPDF de Quillcay (MPH con la MDI, SINIA) y de Casca (INAIGEM), extraídos a `data/safe-zones/` | fijo |
-| Simulación 3D del aluvión de Palcacocha | Somos-Valenzuela et al. 2016, ANA 2016, INDECI 2015, GORE Áncash 2021, Defensoría 2026; relieve AWS Terrain Tiles (`src/lib/palcacocha.ts`) | fijo |
+| Simulación del aluvión en el mapa | Tiempos: Somos-Valenzuela et al. 2016 y Mergili et al. 2020 (solo Palcacocha); Baer 2016 y Frey 2018 (Tullparaju, Cuchillacocha, sin minutos); batimetrías ANA e INAIGEM; rutas por relieve AWS Terrain Tiles (`src/lib/glof.ts`, `data/glof/routes.json`) | fijo |
 | Brechas por centro poblado (columnas 3D) | OSIPTEL 2025, INEI Censos 2017, MINEDU ESCALE, SUSALUD RENIPRESS (`data/centros-poblados.json`) | fijo |
 
 No se usan fuentes con login, captcha o protección anti-robots. Quedan fuera: estaciones de SENAMHI
@@ -51,15 +51,9 @@ python3 -m venv /tmp/geopdf-venv && /tmp/geopdf-venv/bin/pip install -r scripts/
 /tmp/geopdf-venv/bin/python -m unittest discover -s scripts/geopdf
 ```
 
-Simulación 3D del aluvión (`public/simulador/`): se construye con el kit de la skill `teardown` de Claude Code
-(no es dependencia npm, por eso los archivos generados van en el repositorio). El relieve y el cauce salen de
-`scripts/sim/terrain.py`; el código está en `sims/palcacocha-*`:
-
-```bash
-/tmp/geopdf-venv/bin/python scripts/sim/terrain.py --out sims/palcacocha-shared   # relieve, cauce y capas
-npm run build:sim             # public/simulador/palcacocha.html + elevation.glb (TEARDOWN_DIR opcional)
-npm run build:sim -- --film   # además la versión película en teardown-out/ para grabar el video
-```
+Simulación del aluvión (`data/glof/routes.json`): la ruta de cada laguna hasta el río Santa sale del relieve
+(máxima pendiente). Se regenera con `/tmp/geopdf-venv/bin/python scripts/glof/routes.py`. La animación corre en el
+mapa de la app (`src/sections/glof-sim.ts`) y solo usa tiempos publicados (`src/lib/glof.ts`).
 
 Brechas por centro poblado (`data/centros-poblados.json`): `scripts/centros/build.py --raw <descargas>` lee los
 archivos públicos listados en su cabecera (OSIPTEL, INEI 2017, ESCALE, RENIPRESS) y calcula el índice; comprueba

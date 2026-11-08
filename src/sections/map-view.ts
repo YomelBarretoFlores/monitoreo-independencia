@@ -47,6 +47,7 @@ import {
 import { centroPopup, GAP_STOPS, toColumns, TOUR_TOP, type TourLength, tourStops } from '../lib/centros.ts';
 import type { SafeZoneData } from '../lib/safezones-data.ts';
 import { icon } from '../ui/icons.ts';
+import { createGlofSim, type GlofSim } from './glof-sim.ts';
 import { mountPanel, type PanelItem } from './safezones-panel.ts';
 
 // The interactive map (MapLibre GL), loaded on demand by sections/map.ts so the engine and the
@@ -94,6 +95,11 @@ let observer: ResizeObserver | null = null;
 let labels: Marker[] = [];
 let riskStatus: HTMLElement | null = null;
 let syncControls: (() => void) | null = null;
+let collapseLayers: (() => void) | null = null;
+/** The alluvion animation on this map, created once the style has loaded */
+let glof: GlofSim | null = null;
+/** Opening the simulation from the card below the map */
+let onGlofOpen: ((e: MouseEvent) => void) | null = null;
 
 const css = (name: string, fallback: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -560,6 +566,7 @@ function say(chip: HTMLElement, text: string, holdMs?: number): void {
 /** Fly over the casco urbano, Independencia's villages ordered by gap and Palcacocha; any input stops it. */
 async function runTour(m: MapLibre, chip: HTMLElement, length: TourLength): Promise<void> {
   if (!data) return;
+  glof?.close();
   const run = ++tourRun;
   if (!state.columns) setColumns(m, true);
   else if (!state.threeD) {
@@ -704,6 +711,13 @@ class LayersControl implements IControl {
     this.box = box;
     return box;
   }
+  /** Fold the panel (the alluvion simulation needs the whole map) */
+  collapse(): void {
+    const panel = this.box?.querySelector<HTMLElement>('.ml-panel');
+    if (!panel || panel.hidden) return;
+    panel.hidden = true;
+    this.box?.querySelector('.ml-toggle')?.setAttribute('aria-expanded', 'false');
+  }
   /** Reflect a base map changed elsewhere (the 3D button switches to satellite). */
   sync(): void {
     this.box
@@ -778,6 +792,31 @@ class GapControl implements IControl {
     clearTimeout(chipTimer);
     for (const el of [this.box, this.legend, this.menu, this.chip]) el?.remove();
     this.box = this.legend = this.menu = this.chip = null;
+  }
+}
+
+/** "Aluvión": opens or closes the alluvion simulation strip */
+class GlofControl implements IControl {
+  private box: HTMLElement | null = null;
+  onAdd(): HTMLElement {
+    const box = document.createElement('div');
+    box.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+    box.innerHTML = `<button type="button" class="map-glof" aria-pressed="false" title="Simulación de aluvión" aria-label="Simulación de aluvión">${icon('flood')}</button>`;
+    box.querySelector('button')!.addEventListener('click', () => {
+      if (!glof) return;
+      if (glof.isOpen) glof.close();
+      else glof.open();
+      this.sync();
+    });
+    this.box = box;
+    return box;
+  }
+  sync(): void {
+    this.box?.querySelector('button')?.setAttribute('aria-pressed', String(!!glof?.isOpen));
+  }
+  onRemove(): void {
+    this.box?.remove();
+    this.box = null;
   }
 }
 
@@ -864,15 +903,19 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
   m.addControl(threeD, 'top-left');
   const gaps = new GapControl();
   m.addControl(gaps, 'top-left');
+  const glofCtl = new GlofControl();
+  m.addControl(glofCtl, 'top-left');
   m.addControl(new ResetControl(), 'top-left');
   m.addControl(new FullscreenControl({ container: el.closest<HTMLElement>('.map-card') ?? el }), 'top-left');
   m.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
   const layersCtl = new LayersControl();
   m.addControl(layersCtl, 'top-right');
+  collapseLayers = () => layersCtl.collapse();
   syncControls = () => {
     layersCtl.sync();
     threeD.sync();
     gaps.sync();
+    glofCtl.sync();
   };
   addDistrictLabels(m);
   bindClicks(m);
@@ -890,7 +933,30 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
     if (state.columns) setColumns(m, true);
     applyFilters(m);
     if (pending) update(pending.panel, pending.now);
+    if (data) {
+      glof = createGlofSim(m, {
+        routes: data.lakeRoutes,
+        ensure3D: () => {
+          if (!state.threeD) setThreeD(m, true);
+          syncControls?.();
+        },
+        stopTour,
+        onToggle: () => {
+          if (glof?.isOpen) collapseLayers?.();
+          syncControls?.();
+        },
+      });
+      resetHooks.add(() => glof?.close());
+    }
   });
+  // the card under the map opens the simulation here
+  onGlofOpen = (e) => {
+    if (!(e.target as Element).closest('[data-glof-open]') || !glof) return;
+    el.closest('.map-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    glof.open();
+    syncControls?.();
+  };
+  document.addEventListener('click', onGlofOpen);
   const panelRoot = document.getElementById('sz-panel');
   if (panelRoot && data)
     mountPanel(panelRoot, data, state.filters, {
@@ -911,11 +977,17 @@ export function unmount(): void {
   for (const l of labels) l.remove();
   labels = [];
   stopTour();
+  glof?.destroy();
+  glof = null;
+  resetHooks.clear();
+  if (onGlofOpen) document.removeEventListener('click', onGlofOpen);
+  onGlofOpen = null;
   map?.remove();
   map = null;
   ready = false;
   riskStatus = null;
   syncControls = null;
+  collapseLayers = null;
   pending = null;
   popup = null;
   selectedZone = null;

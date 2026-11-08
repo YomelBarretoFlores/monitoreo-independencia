@@ -1630,9 +1630,9 @@
 /* entry card of the Palcacocha alluvion simulator */
 .sim-card {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: calc(var(--gap) * 1.5);
-  align-items: center;
+  align-items: start;
 }
 
 .sim-body {
@@ -1665,7 +1665,61 @@
   font-size: var(--t-xs);
 }
 
-.sim-figs {
+.sim-lakes {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sim-lakes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+.sim-lakes small {
+  flex-basis: 100%;
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.sim-lake-n {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sim-st {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+.sim-st-timed {
+  background: var(--dark);
+  color: var(--on-dark);
+}
+
+.sim-st-comparable {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.sim-st-no-study {
+  border: 1px dashed var(--line-strong);
+  color: var(--ink-3);
+}
+
+.sim-evidence {
+  display: grid;
+  gap: 10px;
+  align-self: start;
+}
+
+.sim-evidence ul {
   display: grid;
   gap: 8px;
   margin: 0;
@@ -1673,25 +1727,39 @@
   list-style: none;
 }
 
-.sim-figs li {
+.sim-ev {
   display: grid;
-  grid-template-columns: 96px 1fr;
-  align-items: baseline;
+  grid-template-columns: 92px 1fr;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-radius: var(--r-sm);
   background: var(--surface-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
 }
 
-.sim-figs b {
+.sim-ev b {
   font-size: var(--t-lg);
-  font-weight: 700;
   color: var(--ink);
 }
 
-.sim-figs span {
-  font-size: var(--t-sm);
-  color: var(--ink-2);
+.sim-ev small {
+  display: block;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.sim-ev a {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sim-ev-sin-fuente b {
+  color: var(--ink-3);
+  text-decoration: line-through;
 }
 
 @media (max-width: 767px) {
@@ -1863,4 +1931,211 @@
 
 .map-tour-menu button:hover {
   background: var(--line);
+}
+
+/* alluvion simulation on the map */
+.map-glof .ic {
+  width: 18px;
+  height: 18px;
+}
+
+.maplibregl-ctrl-group button.map-glof[aria-pressed='true'],
+.maplibregl-ctrl-group button.map-glof[aria-pressed='true']:not(:disabled):hover {
+  background: var(--dark);
+  color: var(--lime);
+}
+
+.map-card .glof-on .map-gap-legend,
+.glof-on .map-gap-legend {
+  display: none;
+}
+
+.glof-strip {
+  display: grid;
+  gap: 8px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  font-size: var(--t-xs);
+  color: var(--ink-2);
+}
+
+.glof-strip[hidden] {
+  display: none;
+}
+
+.gs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.gs-field {
+  display: grid;
+  gap: 2px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.gs-field select {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  font: inherit;
+  color: var(--ink);
+}
+
+.gs-seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.gs-seg button {
+  min-height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.gs-seg button[aria-pressed='true'] {
+  background: var(--dark);
+  color: var(--on-dark);
+}
+
+.gs-seg button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.gs-play,
+.gs-close {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dark);
+  color: var(--on-dark);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.gs-play:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.gs-play .ic {
+  width: 16px;
+  height: 16px;
+}
+
+.gs-close {
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.gs-time {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 200px;
+  padding-bottom: 16px;
+}
+
+.gs-time input {
+  width: 100%;
+  accent-color: #e3562a;
+}
+
+.gs-marks span {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--ink-3);
+}
+
+.gs-marks i {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 1px;
+  height: 6px;
+  background: var(--ink-3);
+}
+
+.gs-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.gs-read {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  align-items: baseline;
+}
+
+.gs-read span {
+  display: grid;
+}
+
+.gs-read small {
+  color: var(--ink-3);
+}
+
+.gs-read b {
+  font-size: var(--t-sm);
+  color: var(--ink);
+}
+
+.gs-read .gs-phase {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: #b8401c;
+}
+
+.gs-read .gs-hot {
+  color: #c62a1e;
+}
+
+.gs-note {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.gs-marks span.gs-start {
+  transform: none;
+}
+
+.gs-marks span.gs-start i {
+  left: 0;
+}
+
+.gs-marks span.gs-end {
+  transform: translateX(-100%);
+}
+
+.gs-marks span.gs-end i {
+  left: auto;
+  right: 0;
 }

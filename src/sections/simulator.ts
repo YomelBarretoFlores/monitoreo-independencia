@@ -1,30 +1,60 @@
 import { esc, fmtNum } from '../lib/format.ts';
-import { EXPOSED, SCENARIOS, WARNING } from '../lib/glof.ts';
+import {
+  ARRIVAL_EVIDENCE,
+  type EvidenceKind,
+  LAKE_IDS,
+  LAKES,
+  type LakeStatus,
+  SOURCES,
+} from '../lib/glof.ts';
 import { icon } from '../ui/icons.ts';
 
-// Entry card for the Palcacocha alluvion simulator (public/simulador/, built from sims/ with the teardown kit).
-// The figures come from the same model the simulator runs on.
+// Card under the map: opens the alluvion simulation on the map itself (src/sections/glof-sim.ts) and shows
+// the evidence behind every time figure, so the numbers people quote can be checked against the studies.
 
-export const SIMULATOR_URL = '/simulador/palcacocha.html';
+const KIND_LABEL: Record<EvidenceKind, string> = {
+  modelo: 'Modelo',
+  sensibilidad: 'Rango del modelo',
+  reconstruccion: 'Reconstrucción 1941',
+  evacuacion: 'Tiempo para evacuar',
+  'sin-fuente': 'Sin fuente',
+};
+
+const STATUS_LABEL: Record<LakeStatus, string> = {
+  timed: 'Con tiempos publicados',
+  comparable: 'Sin minutos publicados',
+  'no-study': 'Sin estudio',
+};
+
+const sourceLink = (id: keyof typeof SOURCES) => {
+  const s = SOURCES[id];
+  return `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label.split(',')[0]!)} (${s.year})</a>`;
+};
 
 export function renderSimulator(): string {
-  const big = SCENARIOS.grande;
-  const figures: [string, string][] = [
-    [
-      `${fmtNum(Math.round(big.entrance.frontH * 60))} min`,
-      'tarda el frente en llegar a la ciudad en el escenario grande',
-    ],
-    [`${fmtNum(WARNING.minutes)} min`, 'de aviso que da el sistema de alerta temprana regional'],
-    [fmtNum(EXPOSED.independencia), 'personas de Independencia viven en la zona inundable'],
-  ];
+  const evidence = ARRIVAL_EVIDENCE.map(
+    (e) => `<li class="sim-ev sim-ev-${e.kind}">
+      <b>${esc(e.value)}</b>
+      <span><small>${esc(KIND_LABEL[e.kind])}</small>${esc(e.what)}${e.source ? ` ${sourceLink(e.source)}` : ''}</span>
+    </li>`,
+  ).join('');
+  const lakes = LAKE_IDS.map((id) => {
+    const l = LAKES[id];
+    return `<li><span class="sim-lake-n">${esc(l.name)}</span><span class="sim-st sim-st-${l.status}">${esc(STATUS_LABEL[l.status])}</span>
+      <small>${esc(l.path)} · ${fmtNum(l.volumeM3 / 1e6, 1)} millones de m³ (batimetría ${l.volumeYear}, ${sourceLink(l.volumeSource)})</small></li>`;
+  }).join('');
   return `<section class="card sim-card" aria-labelledby="sim-h">
     <div class="sim-body">
-      <p class="sim-k">Simulación 3D · Laguna Palcacocha</p>
-      <h3 id="sim-h">¿Cómo bajaría un aluvión hasta Huaraz e Independencia?</h3>
-      <p>Recorre en 3D el valle real, desde la avalancha en la laguna, por la quebrada Cojup y el río Quillcay, hasta la ciudad. Puedes comparar tres escenarios publicados y ver el mapa de peligro y las zonas seguras.</p>
-      <p class="sim-links"><a class="btn" href="${SIMULATOR_URL}" target="_blank" rel="noopener">${icon('external')}<span>Abrir la simulación 3D</span></a></p>
-      <p class="muted sim-note">Simulación ilustrativa, no es un modelo oficial. Cifras de Somos-Valenzuela et al. (2016), INDECI (2015) y el Gobierno Regional de Áncash (2021).</p>
+      <p class="sim-k">Simulación del aluvión en el mapa</p>
+      <h3 id="sim-h">¿Cuánto tardaría un aluvión en llegar a Huaraz e Independencia?</h3>
+      <p>La simulación corre sobre la imagen satelital y el relieve reales del mapa de arriba: el aluvión baja por el cauce que sale del propio relieve, y al llegar a la ciudad se marca el mapa de peligro oficial. Solo Palcacocha tiene tiempos publicados; para las otras lagunas se muestra lo que dicen los estudios.</p>
+      <p class="sim-links"><button type="button" class="btn" data-glof-open>${icon('flood')}<span>Ver la simulación en el mapa</span></button></p>
+      <ul class="sim-lakes">${lakes}</ul>
+      <p class="muted sim-note">Simulación ilustrativa, no es un modelo oficial. Entre los puntos que publican los estudios, el avance se interpola.</p>
     </div>
-    <ul class="sim-figs">${figures.map(([v, k]) => `<li><b>${esc(v)}</b><span>${esc(k)}</span></li>`).join('')}</ul>
+    <div class="sim-evidence">
+      <p class="sim-k">Las cifras que circulan y qué son</p>
+      <ul>${evidence}</ul>
+    </div>
   </section>`;
 }

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   ARRIVAL_EVIDENCE,
+  bearingAlong,
+  playRate,
+  pointAlong,
+  type RoutePoint,
+  simEnd,
   cityRevealAt,
   floodGradient,
   LAKES,
@@ -149,5 +154,32 @@ describe('animation helpers', () => {
     expect(cityRevealAt(s, tIn + 1)).toBeGreaterThan(0);
     expect(cityRevealAt(s, s.exit!.frontH * 3600)).toBe(1);
     expect(cityRevealAt(SCENARIOS.r1941, 99 * 3600)).toBe(1);
+  });
+});
+
+describe('route geometry and playback', () => {
+  const path: RoutePoint[] = [
+    [-77.4, -9.4, 4500, 0],
+    [-77.41, -9.4, 4400, 1000],
+    [-77.41, -9.41, 4300, 2000],
+  ];
+
+  it('finds the point at a distance along the route, clamped to its ends', () => {
+    expect(pointAlong(path, 500)).toEqual([-77.405, -9.4]);
+    expect(pointAlong(path, -10)).toEqual([-77.4, -9.4]);
+    expect(pointAlong(path, 9999)).toEqual([-77.41, -9.41]);
+  });
+
+  it('gives the heading of the route at a distance (west, then south)', () => {
+    expect(bearingAlong(path, 500)).toBeCloseTo(-90, 0);
+    expect(bearingAlong(path, 1500)).toBeCloseTo(180, 0);
+  });
+
+  it('plays the avalanche slowly and the whole run in about 70 seconds', () => {
+    const s = SCENARIOS.grande;
+    expect(playRate(s, 0)).toBeLessThan(10);
+    expect(playRate(s, 3600)).toBeCloseTo((s.exit!.frontH * 3600) / 70, 0);
+    expect(simEnd(s)).toBe(s.exit!.frontH * 3600 + 600);
+    expect(simEnd(SCENARIOS.r1941)).toBe(SCENARIOS.r1941.entrance.frontH * 3600 + 1200);
   });
 });

@@ -12,8 +12,7 @@
     "test": "vitest run",
     "collect": "node server/collect-once.ts",
     "format": "prettier --write .",
-    "start": "node server/index.ts",
-    "build:sim": "node scripts/sim/build.mjs"
+    "start": "node server/index.ts"
   },
   "engines": {
     "node": ">=22.18.0"
