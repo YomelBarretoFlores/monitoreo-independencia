@@ -6,3 +6,4 @@ dist/
 .datos/
 # Vercel CLI (local link and build output)
 .vercel/
+__pycache__/
