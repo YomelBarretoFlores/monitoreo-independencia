@@ -61,3 +61,6 @@ Branch: `feat/3d-showcase` (continues showcase-3d). Delivery: work-unit commits;
   - "Aluvión" or the card used before the map loaded did nothing; it now opens once loaded.
 
   After the fixes: no page overflow at any width. `#resumen` flags only the district SVG's clipped paths (no scroll; the screenshot is fine). Revisiting the map 8+8 times: 0 failures. An earlier "map failed" in the probe was the headless browser's GPU (failed full-page captures), not the app.
+- L12: Deployed on 2026-11-08. `main` fast-forwarded to 12f32af and pushed, and `feat/3d-showcase` was pushed. Vercel production is Ready (monitoreo-independencia-oisg044h0). Production checks:
+  - `/` returns 200 and `/api/panel` returns 200; `/simulador/palcacocha.html` returns 404, as intended.
+  - At 1400 and 390 px the simulation opens and plays, Fuentes lists OSIPTEL, RENIPRESS, Somos-Valenzuela and Terrain Tiles, there is no overflow and the console shows no errors.
