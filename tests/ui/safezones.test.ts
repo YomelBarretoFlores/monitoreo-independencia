@@ -5,7 +5,9 @@ import {
   directionsUrl,
   matchesQuery,
   matchHazard,
+  matchArrow,
   matchPlace,
+  matchRoute,
   matchZone,
   monthYear,
   placeColor,
@@ -63,6 +65,16 @@ describe('filters', () => {
   it('only Independencia', () => {
     expect(matchPlace(pin, f({ onlyIndependencia: true }))).toBe(false);
     expect(matchZone(zone, f({ onlyIndependencia: true }))).toBe(true);
+  });
+
+  it('evacuation routes (Casca) and arrows (Quillcay) follow their basin and the routes toggle', () => {
+    expect(matchRoute({ basin: 'casca' }, DEFAULT_FILTERS)).toBe(true);
+    expect(matchArrow({ basin: 'quillcay', bearing: 90 }, DEFAULT_FILTERS)).toBe(true);
+    expect(matchRoute({ basin: 'casca' }, f({ routes: false }))).toBe(false);
+    expect(matchArrow({ basin: 'quillcay', bearing: 90 }, f({ routes: false }))).toBe(false);
+    expect(matchArrow({ basin: 'quillcay', bearing: 90 }, f({ basins: ['casca'] }))).toBe(false);
+    // hiding the zone kind no longer hides the routes: they have their own toggle
+    expect(matchRoute({ basin: 'casca' }, f({ kinds: ['refugio'] }))).toBe(true);
   });
 
   it('exposed elements appear only when asked for, still within the basin filter', () => {

@@ -164,6 +164,79 @@ def detect_pins(img: np.ndarray) -> list[tuple[str, float, float]]:
     return pins
 
 
+# Evacuation arrows ("Ruta de evacuación priorizada"): small black arrows with a white halo,
+# drawn along the page axes. Street names are vector text, removed before looking for them.
+ARROW_BLACK_MAX = 60  # channel value
+ARROW_SIZE_PX = (15, 40)  # ~25 x 20 px horizontal, ~20 x 28 px vertical at 300 dpi
+ARROW_FILL = (0.25, 0.7)  # share of the bounding box the arrow covers
+ARROW_HALO_WHITE = 0.35  # share of white in the ring around it (text and lines have none)
+ARROW_ELONGATION = 1.15  # variance along the arrow over across it
+ARROW_SNAP_DEG = 15  # arrows follow their street; snapping only removes pixel noise
+
+
+def render_without_text(path: str, frame: pymupdf.Rect) -> np.ndarray:
+    """The map raster with every vector text removed (a throwaway copy of the page)."""
+    doc = pymupdf.open(path)
+    page = doc[0]
+    page.add_redact_annot(page.rect)
+    page.apply_redactions(
+        images=pymupdf.PDF_REDACT_IMAGE_NONE,
+        graphics=pymupdf.PDF_REDACT_LINE_ART_NONE,
+        text=pymupdf.PDF_REDACT_TEXT_REMOVE,
+    )
+    return render_map(page, frame)
+
+
+def detect_arrows(
+    img: np.ndarray, exclude: list[tuple[float, float, float, float]] = ()
+) -> list[tuple[float, float, float, float]]:
+    """(x, y, dx, dy) per arrow in raster pixels: its centre and a unit direction.
+
+    The ink's principal axis gives the arrow's line; the head holds more ink than the shaft,
+    so the ink centroid sits off the middle of that line towards the head. Directions snap
+    to ARROW_SNAP_DEG (arrows follow their street at any angle). `exclude` lists boxes
+    (x0, y0, x1, y1) whose ink is never an arrow, such as the pins' symbols.
+    """
+    black = (img.max(axis=2) < ARROW_BLACK_MAX).astype(np.uint8)
+    white = (img.min(axis=2) >= BACKGROUND_MIN).astype(np.uint8)
+    n, comp, stats, centroids = cv2.connectedComponentsWithStats(black, connectivity=8)
+    lo, hi = ARROW_SIZE_PX
+    arrows = []
+    for i in range(1, n):
+        x, y, w, h, area = stats[i]
+        if not (lo <= w <= hi and lo <= h <= hi) or not ARROW_FILL[0] <= area / (w * h) <= ARROW_FILL[1]:
+            continue
+        cx, cy = centroids[i]
+        if any(x0 <= cx <= x1 and y0 <= cy <= y1 for x0, y0, x1, y1 in exclude):
+            continue
+        box = comp[max(0, y - 3) : y + h + 3, max(0, x - 3) : x + w + 3] == i
+        ring = white[max(0, y - 3) : y + h + 3, max(0, x - 3) : x + w + 3]
+        if ring[~box].mean() < ARROW_HALO_WHITE:
+            continue
+        ys, xs = np.nonzero(comp[y : y + h, x : x + w] == i)
+        d = np.column_stack([xs + x - cx, ys + y - cy])
+        evals, evecs = np.linalg.eigh(d.T @ d / len(d))
+        if evals[1] < ARROW_ELONGATION * evals[0]:
+            continue  # no clear long axis: not an arrow
+        u = evecs[:, 1]
+        t = d @ u
+        head = -(t.max() + t.min()) / 2  # centroid (t = 0) relative to the middle of the line
+        if abs(head) < 0.25:
+            continue  # symmetric along its axis: not an arrow
+        angle = np.arctan2(*(u[::-1] * np.sign(head)))
+        step = np.radians(ARROW_SNAP_DEG)
+        snapped = np.round(angle / step) * step
+        dx, dy = float(np.cos(snapped)), float(np.sin(snapped))
+        arrows.append((float(cx), float(cy), round(dx, 12) + 0.0, round(dy, 12) + 0.0))
+    return arrows
+
+
+def bearing(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Compass bearing (degrees clockwise from north) from lon/lat a to lon/lat b."""
+    dlon = (b[0] - a[0]) * np.cos(np.radians((a[1] + b[1]) / 2))
+    return float((np.degrees(np.arctan2(dlon, b[1] - a[1])) + 360) % 360)
+
+
 def extract(path: str, debug: bool = False) -> tuple[dict[str, list[dict]], dict]:
     doc = pymupdf.open(path)
     page = doc[0]
@@ -176,10 +249,12 @@ def extract(path: str, debug: bool = False) -> tuple[dict[str, list[dict]], dict
     scale = 72 / DPI
 
     panels = panel_rects(page, frame)
-    for r in panels:  # legend, title and credit boxes repeat the map colors
+    plain = render_without_text(path, frame)
+    for r in panels:  # legend, title and credit boxes repeat the map colors and arrows
         a = max(0, int((r.x0 - frame.x0) / scale)), max(0, int((r.y0 - frame.y0) / scale))
         b = int((r.x1 - frame.x0) / scale) + 1, int((r.y1 - frame.y0) / scale) + 1
         img[a[1] : b[1], a[0] : b[0]] = 255
+        plain[a[1] : b[1], a[0] : b[0]] = 255
     labels = drop_specks(fill_small_holes(fill_unknown(classify(img))))
 
     def to_lonlat(px: np.ndarray) -> np.ndarray:
@@ -197,6 +272,14 @@ def extract(path: str, debug: bool = False) -> tuple[dict[str, list[dict]], dict
         feature(Point(to_lonlat(np.array([x, y]))[0]), {"basin": BASIN, "group": "seguro", "kind": kind})
         for kind, x, y in pins
     ]
+    pin_boxes = [(x - 50, y - 125, x + 50, y + 5) for _, x, y in pins]  # head above the tip
+    arrows = detect_arrows(plain, exclude=pin_boxes)
+    evacuation = []
+    for x, y, dx, dy in arrows:
+        at, ahead = to_lonlat(np.array([[x, y], [x + 20 * dx, y + 20 * dy]]))
+        evacuation.append(
+            feature(Point(at), {"basin": BASIN, "bearing": round(bearing(tuple(at), tuple(ahead)), 1)})
+        )
     report = {
         "georefResidualM": round(georef.residual_m, 2),
         "rasterPx": list(img.shape[:2]),
@@ -204,7 +287,8 @@ def extract(path: str, debug: bool = False) -> tuple[dict[str, list[dict]], dict
         "panelsMasked": len(panels),
         "hazardHa": {lvl: round(sum(area_m2(p) for p in polys) / 10_000, 2) for lvl, polys in parts.items()},
         "pins": {k: sum(1 for p in pins if p[0] == k) for k in PIN_RGB},
+        "arrows": len(arrows),
     }
     if debug:
-        report["_debug"] = {"img": img, "labels": labels, "pins": pins}
-    return {"hazard": hazard, "points": points}, report
+        report["_debug"] = {"img": img, "labels": labels, "pins": pins, "arrows": arrows}
+    return {"hazard": hazard, "points": points, "arrows": evacuation}, report

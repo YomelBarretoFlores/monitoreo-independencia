@@ -1,5 +1,6 @@
 // Contract of data/safe-zones/*.geojson (extracted from the two GeoPDFs by scripts/geopdf).
 import type { Feature, FeatureCollection } from 'geojson';
+import arrowsRaw from '../../data/safe-zones/arrows.geojson?raw';
 import hazardRaw from '../../data/safe-zones/hazard.geojson?raw';
 import influenceRaw from '../../data/safe-zones/influence.geojson?raw';
 import pointsRaw from '../../data/safe-zones/points.geojson?raw';
@@ -16,6 +17,7 @@ const zones = read(zonesRaw);
 const influence = read(influenceRaw);
 const routes = read(routesRaw);
 const points = read(pointsRaw);
+const arrows = read(arrowsRaw);
 
 /** Both maps lie within this lon/lat box (frames of the two GeoPDFs) */
 const BOX = { minLon: -77.55, maxLon: -77.49, minLat: -9.55, maxLat: -9.47 };
@@ -31,7 +33,7 @@ function coords(f: Feature): number[][] {
 
 describe('provenance', () => {
   it('every file names its source maps, and they match MAP_SOURCES', () => {
-    for (const fc of [hazard, zones, influence, routes, points]) {
+    for (const fc of [hazard, zones, influence, routes, points, arrows]) {
       expect(fc.type).toBe('FeatureCollection');
       expect(Date.parse(fc.source.builtAt)).not.toBeNaN();
       for (const [basin, map] of Object.entries(fc.source.maps)) {
@@ -52,7 +54,7 @@ describe('provenance', () => {
 
 describe('geometry', () => {
   it('lies inside the two map frames, with coordinates rounded to 6 decimals', () => {
-    for (const fc of [hazard, zones, influence, routes, points])
+    for (const fc of [hazard, zones, influence, routes, points, arrows])
       for (const f of fc.features)
         for (const [lon, lat] of coords(f)) {
           expect(lon).toBeGreaterThan(BOX.minLon);
@@ -143,5 +145,23 @@ describe('places', () => {
     const count = (basin: string) => points.features.filter((f) => f.properties!.basin === basin).length;
     expect(count('quillcay')).toBe(37);
     expect(count('casca')).toBe(25);
+  });
+});
+
+describe('evacuation arrows', () => {
+  it('are Quillcay points with a compass bearing, mostly along the four map axes', () => {
+    expect(arrows.features.length).toBeGreaterThan(100);
+    for (const f of arrows.features) {
+      expect(f.geometry.type).toBe('Point');
+      expect(f.properties!.basin).toBe('quillcay');
+      const b = f.properties!.bearing as number;
+      expect(b).toBeGreaterThanOrEqual(0);
+      expect(b).toBeLessThan(360);
+    }
+    // the source map is rotated, but its arrows follow its own axes: bearings cluster in 4 groups
+    const groups = new Set(
+      arrows.features.map((f) => Math.round((f.properties!.bearing as number) / 90) % 4),
+    );
+    expect(groups.size).toBe(4);
   });
 });

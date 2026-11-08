@@ -36,7 +36,7 @@ SOURCES = {
         "scale": "1:8 500",
         "pdf": "https://sinia.minam.gob.pe/sites/default/files/archivos/public/docs/MAPA%20DE%20ZONAS%20SEGURAS%20Y%20RUTAS%20DE%20EVACUACI%C3%93N_FIN.pdf",
         "page": "https://sinia.minam.gob.pe/mapas/mapa-zonas-seguras-rutas-evacuacion-ante-aluviones-huaraz-independencia",
-        "method": "Peligro vectorizado desde la imagen del mapa (0,72 m por píxel); lugares seguros detectados por el color de cada ícono.",
+        "method": "Peligro vectorizado desde la imagen del mapa (0,72 m por píxel); lugares seguros detectados por el color de cada ícono y flechas de evacuación por su forma.",
     },
     "casca": {
         "title": "Mapa de zonas seguras y peligro por aluvión – unidad hidrográfica Casca",
@@ -49,7 +49,7 @@ SOURCES = {
     },
 }
 
-LAYERS = ("hazard", "zones", "influence", "routes", "points")
+LAYERS = ("hazard", "zones", "influence", "routes", "points", "arrows")
 
 
 def main() -> int:

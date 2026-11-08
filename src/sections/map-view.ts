@@ -34,6 +34,7 @@ import {
   EXPOSED_KINDS,
   HAZARD_LEVELS,
   hazardPopup,
+  matchArrow,
   matchHazard,
   matchPlace,
   matchRoute,
@@ -270,6 +271,7 @@ function addSafeZoneLayers(
   sources['sz-influence'] = { type: 'geojson', data: d.influence };
   sources['sz-routes'] = { type: 'geojson', data: d.routes };
   sources['sz-points'] = { type: 'geojson', data: d.points };
+  sources['sz-arrows'] = { type: 'geojson', data: d.arrows };
   layers.push(
     {
       id: 'sz-hazard',
@@ -329,7 +331,49 @@ function addSafeZoneLayers(
         'line-dasharray': [2, 1.2],
       },
     },
+    {
+      // Quillcay map's evacuation arrows, turned to their real bearing
+      id: 'sz-arrows',
+      type: 'symbol',
+      source: 'sz-arrows',
+      filter: NONE,
+      minzoom: 12.5,
+      layout: {
+        'icon-image': ARROW_ICON,
+        'icon-rotate': ['get', 'bearing'],
+        'icon-rotation-alignment': 'map',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+        'icon-size': ['interpolate', ['linear'], ['zoom'], 13, 0.4, 15, 0.65, 17, 1],
+      },
+    },
   );
+}
+
+const ARROW_ICON = 'evac-arrow';
+
+/** A black arrow pointing north with a white halo, like the source map's (48 px, drawn at 2x). */
+function arrowIcon(): ImageData {
+  const size = 48;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.beginPath();
+  ctx.moveTo(24, 6);
+  ctx.lineTo(38, 22);
+  ctx.lineTo(29, 22);
+  ctx.lineTo(29, 42);
+  ctx.lineTo(19, 42);
+  ctx.lineTo(19, 22);
+  ctx.lineTo(10, 22);
+  ctx.closePath();
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#ffffff';
+  ctx.stroke();
+  ctx.fillStyle = '#15171b';
+  ctx.fill();
+  return ctx.getImageData(0, 0, size, size);
 }
 
 const uids = <P extends { uid: number }>(fc: { features: { properties: P }[] }, keep: (p: P) => boolean) =>
@@ -347,6 +391,7 @@ function applyFilters(m: MapLibre): void {
   m.setFilter('sz-routes', routes);
   m.setFilter('sz-routes-casing', routes);
   m.setFilter('sz-points', only(uids(data.points, (p) => matchPlace(p, f))));
+  m.setFilter('sz-arrows', only(uids(data.arrows, (p) => matchArrow(p, f))));
   // a selection hidden by the filters goes away
   if (selectedZone !== null && !matchZone(data.zones.features[selectedZone]!.properties, f))
     selectZone(m, null);
@@ -632,6 +677,10 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
   addDistrictLabels(m);
   bindClicks(m);
   trackRiskLoading(m);
+  m.on('styleimagemissing', (e) => {
+    if (e.id === ARROW_ICON && !m.hasImage(ARROW_ICON))
+      m.addImage(ARROW_ICON, arrowIcon(), { pixelRatio: 2 });
+  });
   m.on('load', () => {
     ready = true;
     // restore the layers chosen earlier in this visit

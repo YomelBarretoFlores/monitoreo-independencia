@@ -71,6 +71,7 @@ export function renderMapLegend(p: Panel | null, _ctx: Ctx): string {
       ${HAZARD_LEVELS.map((l) => `<li><i class="sw" style="background:${l.color};opacity:.7"></i>${esc(l.label)}</li>`).join('')}
       <li><i class="sw sw-zone"></i>Zona segura</li>
       <li><i class="sw sw-route"></i>Ruta de evacuación</li>
+      <li><i class="sz-arrow" aria-hidden="true"></i>Dirección de evacuación</li>
     </ul>
     <p class="muted">${esc(GEO_CREDITS)} Capas de riesgo: CENEPRED (escenario El Niño 2027). Los mapas satelital, de relieve y de calles son de Esri y se activan en «Capas»; el relieve 3D usa Terrain Tiles (Mapzen, AWS).</p>
   </div>`;

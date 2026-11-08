@@ -88,6 +88,8 @@ export interface SafeZoneFilters {
   kinds: SafeKind[];
   /** Show the Casca map's exposed schools, health posts and stadium */
   exposed: boolean;
+  /** Evacuation routes (Casca) and direction arrows (Quillcay) */
+  routes: boolean;
   /** Casca zones only: the source gives evacuation times there */
   maxEvacMin: number | null;
   onlyIndependencia: boolean;
@@ -98,6 +100,7 @@ export const DEFAULT_FILTERS: SafeZoneFilters = {
   levels: ['muy-alto', 'alto', 'medio', 'bajo'],
   kinds: SAFE_KINDS.map((k) => k.id),
   exposed: false,
+  routes: true,
   maxEvacMin: null,
   onlyIndependencia: false,
 };
@@ -124,9 +127,17 @@ export function matchPlace(p: PlaceProps, f: SafeZoneFilters): boolean {
   return f.kinds.includes(p.kind as SafeKind) && f.maxEvacMin === null;
 }
 
-/** Casca evacuation routes lead to its zones: they follow the zone filters' basin and kind. */
-export const matchRoute = (p: { basin: Basin }, f: SafeZoneFilters) =>
-  f.basins.includes(p.basin) && f.kinds.includes('zona');
+/** Casca evacuation routes: their basin and the routes toggle. */
+export const matchRoute = (p: { basin: Basin }, f: SafeZoneFilters) => f.basins.includes(p.basin) && f.routes;
+
+export interface ArrowProps {
+  basin: Basin;
+  /** Compass bearing of the arrow, degrees clockwise from north */
+  bearing: number;
+}
+
+/** Quillcay evacuation arrows: same rule as the routes. */
+export const matchArrow = (p: ArrowProps, f: SafeZoneFilters) => matchRoute(p, f);
 
 /** Zone ids, kinds and basin names that match a free-text search (accents and case ignored). */
 export function matchesQuery(text: string, query: string): boolean {

@@ -1,13 +1,14 @@
 import type { FeatureCollection, LineString, MultiLineString, MultiPolygon, Point, Polygon } from 'geojson';
+import arrowsRaw from '../../data/safe-zones/arrows.geojson?raw';
 import hazardRaw from '../../data/safe-zones/hazard.geojson?raw';
 import influenceRaw from '../../data/safe-zones/influence.geojson?raw';
 import pointsRaw from '../../data/safe-zones/points.geojson?raw';
 import routesRaw from '../../data/safe-zones/routes.geojson?raw';
 import zonesRaw from '../../data/safe-zones/zones.geojson?raw';
-import type { Basin, HazardProps, PlaceProps, ZoneProps } from './safezones.ts';
+import type { ArrowProps, Basin, HazardProps, PlaceProps, ZoneProps } from './safezones.ts';
 
 // The safe-zone layers (built by scripts/geopdf/extract.py). Imported only by the lazy map
-// chunk, so these ~380 kB (≈90 kB gzipped) never weigh on the other views.
+// chunk, so these ~400 kB (≈100 kB gzipped) never weigh on the other views.
 
 type Area = Polygon | MultiPolygon;
 type Uid = { uid: number };
@@ -18,6 +19,7 @@ export interface SafeZoneData {
   influence: FeatureCollection<Area, { basin: Basin; zone: string }>;
   routes: FeatureCollection<LineString | MultiLineString, { basin: Basin } & Uid>;
   points: FeatureCollection<Point, PlaceProps & Uid>;
+  arrows: FeatureCollection<Point, ArrowProps & Uid>;
 }
 
 /** Numbers every feature (uid = index) so the map can show a subset with a cheap `in` filter. */
@@ -38,5 +40,6 @@ export function loadSafeZoneData(): SafeZoneData {
     influence: JSON.parse(influenceRaw),
     routes: withUids<LineString | MultiLineString, { basin: Basin }>(routesRaw),
     points: withUids<Point, PlaceProps>(pointsRaw),
+    arrows: withUids<Point, ArrowProps>(arrowsRaw),
   };
 }

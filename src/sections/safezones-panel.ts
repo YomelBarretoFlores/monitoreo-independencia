@@ -116,6 +116,7 @@ export function mountPanel(
         <label class="sz-select"><span>Evacuación máxima <small>(solo zonas de Casca)</small></span><select name="evac">
           <option value="">Cualquiera</option>${EVAC_STEPS.map((m) => `<option value="${m}"${filters.maxEvacMin === m ? ' selected' : ''}>Hasta ${m} min</option>`).join('')}
         </select></label>
+        ${check('routes', 'on', filters.routes, '<i class="sz-arrow" aria-hidden="true"></i>Rutas y flechas de evacuación')}
         ${check('only', 'independencia', filters.onlyIndependencia, 'Solo en el distrito de Independencia')}
         ${check('exposed', 'on', filters.exposed, `Elementos expuestos de Casca <span class="sz-exposed">${EXPOSED_KINDS.map((k) => `<small><i class="dot" style="background:${k.color}"></i>${esc(k.label.toLowerCase())}</small>`).join('')}</span>`)}
       </fieldset>
@@ -175,6 +176,7 @@ export function mountPanel(
       levels: all('level') as SafeZoneFilters['levels'],
       kinds: all('kind') as SafeZoneFilters['kinds'],
       exposed: all('exposed').length > 0,
+      routes: all('routes').length > 0,
       maxEvacMin: evac ? Number(evac) : null,
       onlyIndependencia: all('only').length > 0,
     };
@@ -183,12 +185,12 @@ export function mountPanel(
   function writeForm(f: SafeZoneFilters): void {
     form.querySelectorAll<HTMLInputElement>('input[type="checkbox"]').forEach((i) => {
       const list: Record<string, readonly string[]> = { basin: f.basins, level: f.levels, kind: f.kinds };
-      i.checked =
-        i.name in list
-          ? list[i.name]!.includes(i.value)
-          : i.name === 'exposed'
-            ? f.exposed
-            : f.onlyIndependencia;
+      const toggles: Record<string, boolean> = {
+        exposed: f.exposed,
+        routes: f.routes,
+        only: f.onlyIndependencia,
+      };
+      i.checked = i.name in list ? list[i.name]!.includes(i.value) : toggles[i.name]!;
     });
     form.querySelector<HTMLSelectElement>('select[name="evac"]')!.value =
       f.maxEvacMin === null ? '' : String(f.maxEvacMin);
