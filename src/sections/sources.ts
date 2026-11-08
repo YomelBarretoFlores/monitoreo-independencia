@@ -34,7 +34,8 @@ const every = (m: number | null) =>
 
 const ESRI_URL = 'https://www.esri.com/';
 const IGN_URL = 'https://data.humdata.org/dataset/cod-ab-per';
-const ANA_URL = 'https://geosnirh.ana.gob.pe/';
+// the layer the map draws (the site's root only shows the server's default page)
+const ANA_URL = 'https://geosnirh.ana.gob.pe/server/rest/services/P%C3%BAblico/Rios/MapServer/37';
 const TERRAIN_URL = 'https://registry.opendata.aws/terrain-tiles/';
 
 /** Fixed data and map layers: they do not refresh, so they are listed apart from the live sources. */
@@ -56,7 +57,10 @@ function staticSources(): string {
           label: 'Instituto Geográfico Nacional (IGN), límites distritales vía HDX COD-AB Perú',
           url: IGN_URL,
         },
-        { label: 'Autoridad Nacional del Agua (ANA), ríos y lagunas, GeoSNIRH', url: ANA_URL },
+        {
+          label: 'Autoridad Nacional del Agua (ANA), ríos y quebradas, GeoSNIRH (capa RiosQuebradas)',
+          url: ANA_URL,
+        },
       ]),
       'Mapa del distrito',
     ),
