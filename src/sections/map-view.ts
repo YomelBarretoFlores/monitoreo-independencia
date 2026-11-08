@@ -633,6 +633,7 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
   bindClicks(m);
   trackRiskLoading(m);
   m.on('load', () => {
+    ready = true;
     // restore the layers chosen earlier in this visit
     setBase(m, state.base);
     for (const r of RISK_LAYERS) if (state.risks.has(r.id)) setRisk(m, r, true);
@@ -645,7 +646,7 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
     mountPanel(panelRoot, data, state.filters, {
       onChange: (f) => {
         state.filters = f;
-        if (m.isStyleLoaded()) applyFilters(m);
+        if (ready) applyFilters(m);
       },
       onSelect: (item) => focusItem(m, item),
       onFit: () => fitSafeZones(m),
@@ -661,6 +662,7 @@ export function unmount(): void {
   labels = [];
   map?.remove();
   map = null;
+  ready = false;
   riskStatus = null;
   syncControls = null;
   pending = null;
@@ -669,6 +671,11 @@ export function unmount(): void {
 }
 
 let pending: { panel: Panel; now: number } | null = null;
+/**
+ * Set once the map's 'load' event fired. Not map.isStyleLoaded(): in MapLibre 6 that stays false
+ * while any tile is still loading (terrain, imagery), so data arriving then would wait forever.
+ */
+let ready = false;
 
 const pointFeature = (lat: number, lon: number, props: Record<string, unknown>): Feature<Point> => ({
   type: 'Feature',
@@ -678,7 +685,7 @@ const pointFeature = (lat: number, lon: number, props: Record<string, unknown>):
 
 export function update(p: Panel | null, now: number): void {
   if (!map || !p) return;
-  if (!map.isStyleLoaded()) {
+  if (!ready) {
     pending = { panel: p, now };
     return;
   }
