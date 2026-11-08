@@ -1626,3 +1626,76 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* entry card of the Palcacocha alluvion simulator */
+.sim-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: calc(var(--gap) * 1.5);
+  align-items: center;
+}
+
+.sim-body {
+  display: grid;
+  gap: 10px;
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+.sim-body h3 {
+  font-size: var(--t-lg);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.sim-k {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.sim-links .ic {
+  width: 16px;
+  height: 16px;
+}
+
+.sim-note {
+  font-size: var(--t-xs);
+}
+
+.sim-figs {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sim-figs li {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.sim-figs b {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sim-figs span {
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+@media (max-width: 767px) {
+  .sim-card {
+    grid-template-columns: 1fr;
+  }
+}

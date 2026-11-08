@@ -22,6 +22,7 @@ import {
   updateMap,
 } from './sections/map.ts';
 import { bindNews, renderLegal, renderNews } from './sections/news.ts';
+import { renderSimulator } from './sections/simulator.ts';
 import { renderRivers } from './sections/rivers.ts';
 import { renderSources } from './sections/sources.ts';
 import { renderSummary } from './sections/summary.ts';
@@ -50,6 +51,7 @@ const RENDERERS: Record<string, Renderer> = {
   earthquakes: renderEarthquakes,
   map: renderMapLegend,
   mapSources: renderMapSources,
+  simulator: renderSimulator,
   news: renderNews,
   legal: renderLegal,
   management: renderManagement,
