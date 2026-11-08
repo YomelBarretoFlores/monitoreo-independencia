@@ -618,6 +618,56 @@ async function runTour(m: MapLibre, chip: HTMLElement, length: TourLength): Prom
   }
 }
 
+/**
+ * Tooltips for every map control, ours and MapLibre's: shown at once on hover and on keyboard focus.
+ * The text is the button's data-tip, else its title (moved to data-tip so the slower native tooltip does not
+ * also appear), else its aria-label.
+ */
+function bindTooltips(m: MapLibre): void {
+  const box = m.getContainer();
+  const tip = document.createElement('div');
+  tip.className = 'map-tip';
+  tip.setAttribute('role', 'tooltip');
+  tip.hidden = true;
+  box.appendChild(tip);
+  const target = (e: Event) =>
+    (e.target as Element | null)?.closest?.<HTMLButtonElement>('.maplibregl-ctrl button') ?? null;
+  const show = (btn: HTMLButtonElement) => {
+    const title = btn.getAttribute('title');
+    if (title) {
+      // MapLibre rewrites its titles when state changes (full screen on/off), so the latest one wins
+      btn.dataset.tip = title;
+      if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', title);
+      btn.removeAttribute('title');
+    }
+    const text = btn.dataset.tip ?? btn.getAttribute('aria-label');
+    if (!text) return;
+    tip.textContent = text;
+    tip.hidden = false;
+    const b = btn.getBoundingClientRect();
+    const c = box.getBoundingClientRect();
+    const left = b.left + b.width / 2 < c.left + c.width / 2;
+    tip.classList.toggle('map-tip-left', !left);
+    tip.style.top = `${b.top - c.top + b.height / 2}px`;
+    tip.style.left = left ? `${b.right - c.left + 8}px` : '';
+    tip.style.right = left ? '' : `${c.right - b.left + 8}px`;
+  };
+  const hide = () => (tip.hidden = true);
+  box.addEventListener('pointerover', (e) => {
+    const btn = target(e);
+    if (btn) show(btn);
+  });
+  box.addEventListener('pointerout', (e) => {
+    if (target(e) && !target({ target: (e as PointerEvent).relatedTarget } as unknown as Event)) hide();
+  });
+  box.addEventListener('focusin', (e) => {
+    const btn = target(e);
+    if (btn) show(btn);
+  });
+  box.addEventListener('focusout', hide);
+  box.addEventListener('pointerdown', hide);
+}
+
 /** Back to the view the map opened with: Independencia framed, flat, no tour, no popup. */
 function resetView(m: MapLibre): void {
   stopTour();
@@ -675,7 +725,7 @@ class LayersControl implements IControl {
     const box = document.createElement('div');
     box.className = 'maplibregl-ctrl map-layers';
     const open = window.matchMedia('(min-width: 768px)').matches;
-    box.innerHTML = `<button type="button" class="ml-toggle" aria-expanded="${open}" aria-controls="ml-panel">${icon('layers')}<span>Capas</span></button>
+    box.innerHTML = `<button type="button" class="ml-toggle" aria-expanded="${open}" aria-controls="ml-panel" data-tip="Capas: mapa base y riesgo ante lluvias (CENEPRED)">${icon('layers')}<span>Capas</span></button>
       <div class="ml-panel" id="ml-panel"${open ? '' : ' hidden'}>
         <fieldset><legend>Mapa base</legend><div class="ml-seg">${BASEMAPS.map(
           (b) =>
@@ -739,8 +789,8 @@ class GapControl implements IControl {
   onAdd(m: MapLibre): HTMLElement {
     const box = document.createElement('div');
     box.className = 'maplibregl-ctrl maplibregl-ctrl-group map-cp';
-    box.innerHTML = `<button type="button" data-action="columns" aria-pressed="${state.columns}" title="Brechas por centro poblado en 3D">${icon('columns')}</button>
-      <button type="button" data-action="tour" aria-expanded="false" aria-controls="map-tour-menu" title="Recorrido automático por los centros poblados">${icon('play')}</button>`;
+    box.innerHTML = `<button type="button" data-action="columns" aria-pressed="${state.columns}" aria-label="Brechas por centro poblado" data-tip="Brechas por centro poblado: columnas 3D (altura = índice de brechas, ancho = población 2017)">${icon('columns')}</button>
+      <button type="button" data-action="tour" aria-expanded="false" aria-controls="map-tour-menu" aria-label="Recorrido automático" data-tip="Recorrido automático: vuela por los caseríos con más brechas hasta la laguna Palcacocha">${icon('play')}</button>`;
     const chip = document.createElement('p');
     chip.className = 'map-tour-chip';
     chip.setAttribute('role', 'status');
@@ -801,7 +851,7 @@ class GlofControl implements IControl {
   onAdd(): HTMLElement {
     const box = document.createElement('div');
     box.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-    box.innerHTML = `<button type="button" class="map-glof" aria-pressed="false" title="Simulación de aluvión" aria-label="Simulación de aluvión">${icon('flood')}</button>`;
+    box.innerHTML = `<button type="button" class="map-glof" aria-pressed="false" aria-label="Simulación de aluvión" data-tip="Simulación de aluvión: cómo bajaría el aluvión de una laguna, sobre el mapa real">${icon('flood')}</button>`;
     box.querySelector('button')!.addEventListener('click', () => {
       if (!glof) return;
       if (glof.isOpen) glof.close();
@@ -826,7 +876,7 @@ class ResetControl implements IControl {
   onAdd(m: MapLibre): HTMLElement {
     const box = document.createElement('div');
     box.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-    box.innerHTML = `<button type="button" class="map-reset" title="Restablecer vista" aria-label="Restablecer vista">${icon('reset')}</button>`;
+    box.innerHTML = `<button type="button" class="map-reset" aria-label="Restablecer vista" data-tip="Restablecer vista: vuelve al encuadre inicial del distrito, en 2D">${icon('reset')}</button>`;
     box.querySelector('button')!.addEventListener('click', () => resetView(m));
     this.box = box;
     return box;
@@ -842,7 +892,7 @@ class ThreeDControl implements IControl {
   onAdd(m: MapLibre): HTMLElement {
     const box = document.createElement('div');
     box.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-    box.innerHTML = `<button type="button" class="map-3d" aria-pressed="${state.threeD}" title="Ver el relieve en 3D">3D</button>`;
+    box.innerHTML = `<button type="button" class="map-3d" aria-pressed="${state.threeD}" aria-label="Relieve 3D" data-tip="Relieve 3D: inclina el mapa sobre el terreno real">3D</button>`;
     this.button = box.querySelector('button');
     this.button!.addEventListener('click', () => setThreeD(m, !state.threeD));
     return box;
@@ -918,6 +968,7 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
     glofCtl.sync();
   };
   addDistrictLabels(m);
+  bindTooltips(m);
   bindClicks(m);
   trackRiskLoading(m);
   m.on('styleimagemissing', (e) => {

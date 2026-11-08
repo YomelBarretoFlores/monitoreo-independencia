@@ -2169,3 +2169,24 @@
   font-weight: 500;
   color: var(--ink);
 }
+
+/* map control tooltips */
+.map-tip {
+  position: absolute;
+  z-index: 5;
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--dark-2);
+  color: var(--on-dark);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  line-height: 1.35;
+  transform: translateY(-50%);
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgb(20 22 26 / 0.2);
+}
+
+.map-tip[hidden] {
+  display: none;
+}
