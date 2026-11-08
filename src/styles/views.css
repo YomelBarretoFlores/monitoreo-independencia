@@ -2155,3 +2155,17 @@
 .gs-close > * {
   pointer-events: none;
 }
+
+/* fixed and map sources on the Fuentes page */
+.src-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.src-list a {
+  font-weight: 500;
+  color: var(--ink);
+}

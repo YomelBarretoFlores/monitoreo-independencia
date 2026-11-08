@@ -35,6 +35,26 @@ export interface CentrosData {
   centros: Centro[];
 }
 
+/** Inputs of data/centros-poblados.json (scripts/centros/build.py SOURCES; a test keeps them in sync) */
+export const CENTROS_SOURCES: CentrosData['sources'] = {
+  osiptel: {
+    label: 'OSIPTEL, cobertura móvil por centro poblado (2025-IV)',
+    url: 'https://www.datosabiertos.gob.pe/sites/default/files/Porcentaje%20de%20cobertura%20movil%20por%20centro%20poblado%20empresa%20operadora%20y%20tecnolog%C3%ADa.csv',
+  },
+  inei2017: {
+    label: 'INEI, Directorio Nacional de Centros Poblados, Censos 2017',
+    url: 'https://www.inei.gob.pe/media/MenuRecursivo/publicaciones_digitales/Est/Lib1541/tomo1.pdf',
+  },
+  escale: {
+    label: 'MINEDU ESCALE, padrón de instituciones educativas (30-10-2026)',
+    url: 'https://escale.minedu.gob.pe/documents/10156/958881/Padron_web_20261030.zip',
+  },
+  renipress: {
+    label: 'SUSALUD RENIPRESS, establecimientos de salud (30-10-2026)',
+    url: 'https://www.datosabiertos.gob.pe/sites/default/files/RENIPRESS_30-10-2026.csv',
+  },
+};
+
 /** Sequential scale for the gap (violet, kept apart from the hazard map's traffic-light colours) */
 export const GAP_STOPS: [number, string][] = [
   [0, '#d8ccef'],
