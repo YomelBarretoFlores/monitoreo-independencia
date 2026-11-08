@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Polygon } from 'geojson';
 import { esc, fmtNum } from './format.ts';
-import { LAKE_POINT } from './palcacocha.ts';
+import { LAKE_POINT } from './glof.ts';
 
 // Centros poblados of Independencia and Huaraz with an access-gap index (data/centros-poblados.json, built by
 // scripts/centros/build.py). Pure: the 3D columns, their colours, the popup and the camera tour.

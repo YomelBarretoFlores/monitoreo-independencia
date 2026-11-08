@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXPOSED, SCENARIOS, WARNING } from '../../src/lib/palcacocha.ts';
+import { EXPOSED, SCENARIOS, WARNING } from '../../src/lib/glof.ts';
 import { renderSimulator, SIMULATOR_URL } from '../../src/sections/simulator.ts';
 import { LAYOUTS } from '../../src/views.ts';
 

@@ -1,7 +1,7 @@
 // The valley from Laguna Palcacocha to the río Santa, built from real elevations (elevation.glb,
 // terrain.json from scripts/sim/terrain.py). One scene unit is one kilometre. The terrain is
 // exaggerated vertically so the 1 500 m drop reads at a glance. Every pose is a function of the
-// state the scenario model gives (src/lib/palcacocha.ts): the flood front distance, the time, and
+// state the scenario model gives (src/lib/glof.ts): the flood front distance, the time, and
 // the scenario's discharge profile.
 import * as THREE from 'three';
 import ELEVATION from './elevation.glb';

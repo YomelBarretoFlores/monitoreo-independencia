@@ -10,7 +10,7 @@ import {
   toColumns,
   tourStops,
 } from '../../src/lib/centros.ts';
-import { LAKE_POINT } from '../../src/lib/palcacocha.ts';
+import { LAKE_POINT } from '../../src/lib/glof.ts';
 
 const data = JSON.parse(raw) as CentrosData;
 const independencia = data.centros.filter((c) => c.district === 'independencia');

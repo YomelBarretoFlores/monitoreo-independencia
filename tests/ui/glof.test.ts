@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ARRIVAL_EVIDENCE,
+  cityRevealAt,
+  floodGradient,
+  LAKES,
   dischargeAt,
   frontAt,
   makeRoute,
@@ -8,7 +12,7 @@ import {
   SOURCES,
   stateAt,
   warningAt,
-} from '../../src/lib/palcacocha.ts';
+} from '../../src/lib/glof.ts';
 
 // a route like the real one: 25.1 km, the hazard map entered at 22.2 km
 const route = makeRoute(25_100, 22_200);
@@ -19,9 +23,9 @@ describe('Palcacocha scenarios (Somos-Valenzuela et al. 2016, Table 6)', () => {
     expect(big.avalancheM3).toBe(3_000_000);
     expect(big.entrance.frontH).toBe(1.32);
     expect(big.entrance.peakM3s).toBe(1980);
-    expect(big.exit.frontH).toBe(2.1);
+    expect(big.exit!.frontH).toBe(2.1);
     expect(SCENARIOS.mediano.entrance.frontH).toBe(2.9);
-    expect(SCENARIOS.pequeno.exit.frontH).toBe(15.8);
+    expect(SCENARIOS.pequeno.exit!.frontH).toBe(15.8);
   });
 
   it('cites a source for every scenario and fact', () => {
@@ -38,7 +42,7 @@ describe('flood front along the route', () => {
 
   it('reaches the city entrance and the río Santa at the published times', () => {
     expect(frontAt(big, route, big.entrance.frontH * 3600)).toBeCloseTo(22_200, 0);
-    expect(frontAt(big, route, big.exit.frontH * 3600)).toBeCloseTo(25_100, 0);
+    expect(frontAt(big, route, big.exit!.frontH * 3600)).toBeCloseTo(25_100, 0);
     expect(frontAt(big, route, 99 * 3600)).toBe(25_100);
   });
 
@@ -76,7 +80,7 @@ describe('phases and warning', () => {
     expect(phaseAt(big, route, 10)).toBe('avalancha');
     expect(phaseAt(big, route, 60)).toBe('quebrada');
     expect(phaseAt(big, route, big.entrance.frontH * 3600 + 60)).toBe('ciudad');
-    expect(phaseAt(big, route, big.exit.frontH * 3600 + 60)).toBe('santa');
+    expect(phaseAt(big, route, big.exit!.frontH * 3600 + 60)).toBe('santa');
   });
 
   it('counts down the time left before the front reaches the city', () => {
@@ -93,5 +97,57 @@ describe('phases and warning', () => {
     expect(s.dischargeM3s).toBe(dischargeAt(big, route, s.frontM));
     expect(s.phase).toBe('quebrada');
     expect(s.progress).toBeCloseTo(s.frontM / 25_100, 9);
+  });
+});
+
+describe('lakes and the evidence behind each time', () => {
+  it('times only the lakes with a published timed model', () => {
+    expect(LAKES.palcacocha.status).toBe('timed');
+    expect(LAKES.tullparaju.status).toBe('comparable');
+    expect(LAKES.cuchillacocha.status).toBe('comparable');
+    for (const id of ['llaca', 'shallap', 'rajucolta'] as const) expect(LAKES[id].status).toBe('no-study');
+    for (const l of Object.values(LAKES)) expect(SOURCES[l.volumeSource]).toBeDefined();
+  });
+
+  it('keeps the published ranges: Somos 2016 sensitivity and the 1941 reconstruction', () => {
+    expect(SCENARIOS.grande.entrance.rangeH).toEqual([1.05, 1.32]);
+    expect(SCENARIOS.r1941.entrance.rangeH).toEqual([36 / 60, 70 / 60]);
+    expect(SCENARIOS.r1941.source).toBe('mergili2020');
+    expect(SCENARIOS.r1941.exit).toBeNull();
+  });
+
+  it('explains the 15 and 30 minute figures instead of using them', () => {
+    const fifteen = ARRIVAL_EVIDENCE.find((e) => e.value === '15 min')!;
+    const thirty = ARRIVAL_EVIDENCE.find((e) => e.value === '30 min')!;
+    expect(fifteen.kind).toBe('sin-fuente');
+    expect(thirty.kind).toBe('evacuacion');
+    for (const e of ARRIVAL_EVIDENCE) if (e.source) expect(SOURCES[e.source]).toBeDefined();
+  });
+});
+
+describe('animation helpers', () => {
+  it('stops the 1941 front at the city entrance, where its reconstruction ends', () => {
+    const s = SCENARIOS.r1941;
+    expect(frontAt(s, route, 10 * 3600)).toBe(22_200);
+  });
+
+  it('builds a valid line-gradient: strictly increasing stops from 0 to 1', () => {
+    for (const p of [0, 0.001, 0.3, 0.97, 1]) {
+      const expr = floodGradient(p) as unknown[];
+      expect(expr.slice(0, 3)).toEqual(['interpolate', ['linear'], ['line-progress']]);
+      const stops = expr.slice(3).filter((_, i) => i % 2 === 0) as number[];
+      expect(stops[0]).toBe(0);
+      expect(stops.at(-1)).toBe(1);
+      for (let i = 1; i < stops.length; i++) expect(stops[i]!).toBeGreaterThan(stops[i - 1]!);
+    }
+  });
+
+  it('reveals the city hazard map only after the front enters it', () => {
+    const s = SCENARIOS.grande;
+    const tIn = s.entrance.frontH * 3600;
+    expect(cityRevealAt(s, tIn - 1)).toBe(0);
+    expect(cityRevealAt(s, tIn + 1)).toBeGreaterThan(0);
+    expect(cityRevealAt(s, s.exit!.frontH * 3600)).toBe(1);
+    expect(cityRevealAt(SCENARIOS.r1941, 99 * 3600)).toBe(1);
   });
 });

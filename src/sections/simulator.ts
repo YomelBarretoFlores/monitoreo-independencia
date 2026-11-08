@@ -1,5 +1,5 @@
 import { esc, fmtNum } from '../lib/format.ts';
-import { EXPOSED, SCENARIOS, WARNING } from '../lib/palcacocha.ts';
+import { EXPOSED, SCENARIOS, WARNING } from '../lib/glof.ts';
 import { icon } from '../ui/icons.ts';
 
 // Entry card for the Palcacocha alluvion simulator (public/simulador/, built from sims/ with the teardown kit).
