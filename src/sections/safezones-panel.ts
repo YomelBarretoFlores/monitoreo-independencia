@@ -68,6 +68,22 @@ export function panelItems(data: SafeZoneData): PanelItem[] {
   return [...zones, ...places];
 }
 
+/** Casca parcels per hazard level, from the map's 3 478 parcels. */
+function exposureBlock(data: SafeZoneData): string {
+  const p = data.exposure.parcels;
+  const levels = HAZARD_LEVELS.filter((l) => l.id !== 'bajo');
+  return `<div class="sz-exposure">
+      <p class="sz-exposure-k">Predios en zona de peligro · Casca</p>
+      <ul>${levels
+        .map(
+          (l) =>
+            `<li><i style="background:${l.color}"></i><b>${fmtNum(p[l.id as keyof typeof p])}</b><span>${esc(l.label.toLowerCase())}</span></li>`,
+        )
+        .join('')}</ul>
+      <small>De ${fmtNum(p.total)} predios del mapa; ${fmtNum(p.fuera)} quedan fuera del peligro. ${esc(data.exposure.rule)}</small>
+    </div>`;
+}
+
 const check = (name: string, value: string, checked: boolean, body: string, cls = 'sz-check') =>
   `<label class="${cls}"><input type="checkbox" name="${name}" value="${value}"${checked ? ' checked' : ''}><span>${body}</span></label>`;
 /** Pill toggle: same checkbox, drawn as a chip */
@@ -92,6 +108,7 @@ export function mountPanel(
       <button type="button" class="sz-fit" data-action="fit" title="Acercar el mapa a las zonas de aluvión">${icon('mapa')}<span>Ver zonas</span></button></div>
     <p class="sz-intro">Mapas oficiales de Quillcay (Huaraz e Independencia) y Casca. Toca una zona o un punto para ver sus datos.</p>
     <p class="sz-stats" role="status" aria-live="polite"></p>
+    ${exposureBlock(data)}
     <form class="sz-form" novalidate>
       <label class="sz-search">${icon('search')}<input type="search" name="q" placeholder="Buscar: ZS-12, refugio, Casca…" aria-label="Buscar zona o lugar" autocomplete="off"></label>
       <ul class="sz-results" hidden></ul>

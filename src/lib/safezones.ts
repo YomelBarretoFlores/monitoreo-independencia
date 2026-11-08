@@ -136,6 +136,15 @@ export interface ArrowProps {
   bearing: number;
 }
 
+/** Parcels of the Casca map per hazard level (data/safe-zones/exposure.json). */
+export interface ParcelExposure {
+  'muy-alto': number;
+  alto: number;
+  medio: number;
+  fuera: number;
+  total: number;
+}
+
 /** Quillcay evacuation arrows: same rule as the routes. */
 export const matchArrow = (p: ArrowProps, f: SafeZoneFilters) => matchRoute(p, f);
 

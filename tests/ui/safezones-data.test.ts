@@ -1,6 +1,7 @@
 // Contract of data/safe-zones/*.geojson (extracted from the two GeoPDFs by scripts/geopdf).
 import type { Feature, FeatureCollection } from 'geojson';
 import arrowsRaw from '../../data/safe-zones/arrows.geojson?raw';
+import exposureRaw from '../../data/safe-zones/exposure.json?raw';
 import hazardRaw from '../../data/safe-zones/hazard.geojson?raw';
 import influenceRaw from '../../data/safe-zones/influence.geojson?raw';
 import pointsRaw from '../../data/safe-zones/points.geojson?raw';
@@ -163,5 +164,25 @@ describe('evacuation arrows', () => {
       arrows.features.map((f) => Math.round((f.properties!.bearing as number) / 90) % 4),
     );
     expect(groups.size).toBe(4);
+  });
+});
+
+describe('exposed parcels (Casca)', () => {
+  it('count the 3 478 parcels of the map legend once each, by hazard level, with provenance', () => {
+    const exposure = JSON.parse(exposureRaw) as {
+      source: { maps: Record<string, { title: string }> };
+      casca: { parcels: Record<string, number>; rule: string };
+    };
+    const p = exposure.casca.parcels;
+    expect(p.total).toBe(3478);
+    expect(p['muy-alto']! + p.alto! + p.medio! + p.fuera!).toBe(p.total);
+    expect(p['muy-alto']).toBeGreaterThan(0);
+    expect(exposure.casca.rule).toMatch(/una vez/);
+    expect(exposure.source.maps.casca!.title).toBe(MAP_SOURCES.find((s) => s.basin === 'casca')!.title);
+  });
+
+  it('influence areas never repeat a zone', () => {
+    const zonesWithArea = influence.features.map((f) => f.properties!.zone);
+    expect(new Set(zonesWithArea).size).toBe(zonesWithArea.length);
   });
 });

@@ -9,12 +9,15 @@ import pymupdf
 from shapely import make_valid
 from shapely.geometry import Point, Polygon
 from shapely.ops import unary_union
+from shapely.prepared import prep
 
 from common import area_m2, distance_m, feature, fill_polygon, stroke_line, tidy
 from georef import Georef, fit, page_viewports, utm_to_lonlat
 
 BASIN = "casca"
 HAZARD_FILL = {(255, 0, 0): "muy-alto", (255, 170, 0): "alto", (255, 255, 0): "medio"}
+PARCEL_FILL = (246, 235, 223)  # "Predios" in the legend: 3 478 of them
+LEVEL_ORDER = ("muy-alto", "alto", "medio")  # highest first
 EXPOSED_FILL = {(0, 132, 168): "educacion", (201, 49, 0): "salud", (113, 201, 110): "estadio"}
 ROUTE_STROKE = (85, 255, 0)  # inner line of the two-stroke route symbol
 HATCH_STROKE = (115, 255, 223)  # safe-zone hatch; its clip path is the zone outline
@@ -90,7 +93,40 @@ GAP_DEG = 3 / 110_574  # ~3 m: wider than the gaps between outline segments
 
 
 MAX_INFLUENCE_AREA_ERR = 0.05  # the table's influence area must match within 5 %
-MAX_INFLUENCE_DISTANCE_M = 400
+MAX_INFLUENCE_GAP_M = 5  # an influence area touches its own safe zone
+
+
+def count_exposed(parcels: list, hazard_by_level: dict) -> dict[str, int]:
+    """Parcels per hazard level: each counts once, in the highest level covering its interior point."""
+    counts = {level: 0 for level in LEVEL_ORDER} | {"fuera": 0}
+    prepared = {level: prep(geom) for level, geom in hazard_by_level.items()}
+    for parcel in parcels:
+        point = parcel.representative_point()
+        level = next((lv for lv in LEVEL_ORDER if lv in prepared and prepared[lv].contains(point)), "fuera")
+        counts[level] += 1
+    return counts | {"total": len(parcels)}
+
+
+def match_influence(rows: list[dict], zone_geoms: dict, candidates: list) -> dict[str, int]:
+    """Zone id -> candidate index. A candidate must touch the zone and match the table's
+    influence area within MAX_INFLUENCE_AREA_ERR; pairs are taken best-first over all zones,
+    so one zone cannot take a polygon that fits another zone better."""
+    pairs = []
+    for row in rows:
+        zone = zone_geoms.get(row["id"])
+        if zone is None:
+            continue
+        for i, cand in enumerate(candidates):
+            err = abs(area_m2(cand) / 10_000 - row["influenceHa"]) / row["influenceHa"]
+            if err <= MAX_INFLUENCE_AREA_ERR and distance_m(cand, zone) <= MAX_INFLUENCE_GAP_M:
+                pairs.append((err, row["id"], i))
+    chosen: dict[str, int] = {}
+    used: set[int] = set()
+    for _, zid, i in sorted(pairs):
+        if zid not in chosen and i not in used:
+            chosen[zid] = i
+            used.add(i)
+    return chosen
 
 
 def _enclosed_areas(lines) -> list[Polygon]:
@@ -119,10 +155,14 @@ def extract(path: str) -> tuple[dict[str, list[dict]], dict]:
         level = HAZARD_FILL.get(_rgb(d.get("fill")))
         if level:
             hazard_parts[level].append(fill_polygon(d["items"], georef))
+    hazard_by_level = {level: unary_union(parts) for level, parts in hazard_parts.items()}
     hazard = [
-        feature(tidy(unary_union(parts), min_area_m2=5), {"basin": BASIN, "level": level})
-        for level, parts in hazard_parts.items()
+        feature(tidy(geom, min_area_m2=5), {"basin": BASIN, "level": level}) for level, geom in hazard_by_level.items()
     ]
+    parcels = [
+        fill_polygon(d["items"], georef) for d in by_layer["Predios"] if _rgb(d.get("fill")) == PARCEL_FILL
+    ]
+    exposure = count_exposed([p for p in parcels if not p.is_empty], hazard_by_level)
 
     # safe zones: outlines matched to the table rows by their coordinates
     rows = read_table(page, drawings)
@@ -136,11 +176,13 @@ def extract(path: str) -> tuple[dict[str, list[dict]], dict]:
         else:
             unmatched += 1
     zones, checks = [], []
+    zone_geoms: dict = {}
     for row in rows:
         parts = parts_by_zone.get(row["id"])
         props = {k: v for k, v in row.items() if k != "point"} | {"basin": BASIN}
         if parts:
             geom = tidy(unary_union(parts))
+            zone_geoms[row["id"]] = geom
             checks.append((row["id"], round(area_m2(geom) / 10_000, 3), row["areaHa"]))
         else:
             geom = Point(row["point"])  # outline not found: keep the table point
@@ -148,25 +190,16 @@ def extract(path: str) -> tuple[dict[str, list[dict]], dict]:
 
     # influence areas: purple outlines drawn as many short segments; close the gaps and
     # take the enclosed area, then attach it to the zone whose table point it contains
-    candidates = []
-    for d in by_layer["Área de Influencia"]:
-        candidates += _enclosed_areas(stroke_line(d["items"], georef))
+    # each outline alone, and all outlines together (some areas are bounded by several paths)
+    outlines_ai = [stroke_line(d["items"], georef) for d in by_layer["Área de Influencia"]]
+    candidates = [c for line in outlines_ai for c in _enclosed_areas(line)]
+    candidates += _enclosed_areas(unary_union(outlines_ai))
     influence, influence_checks = [], []
-    used: set[int] = set()
-    for row in rows:
-        zone_geom = Point(row["point"])
-        best, best_err = None, MAX_INFLUENCE_AREA_ERR
-        for i, cand in enumerate(candidates):
-            if i in used or distance_m(cand, zone_geom) > MAX_INFLUENCE_DISTANCE_M:
-                continue
-            err = abs(area_m2(cand) / 10_000 - row["influenceHa"]) / row["influenceHa"]
-            if err < best_err:
-                best, best_err = i, err
-        if best is not None:
-            used.add(best)
-            area = candidates[best]
-            influence.append(feature(tidy(area), {"basin": BASIN, "zone": row["id"]}))
-            influence_checks.append((row["id"], round(area_m2(area) / 10_000, 3), row["influenceHa"]))
+    for zid, i in sorted(match_influence(rows, zone_geoms, candidates).items(), key=lambda kv: int(kv[0][3:])):
+        area = candidates[i]
+        row = next(r for r in rows if r["id"] == zid)
+        influence.append(feature(tidy(area), {"basin": BASIN, "zone": zid}))
+        influence_checks.append((zid, round(area_m2(area) / 10_000, 3), row["influenceHa"]))
 
     routes = [
         feature(tidy(stroke_line(d["items"], georef)), {"basin": BASIN})
@@ -193,4 +226,5 @@ def extract(path: str) -> tuple[dict[str, list[dict]], dict]:
         "routes": len(routes),
         "exposed": len(exposed),
     }
-    return {"hazard": hazard, "zones": zones, "influence": influence, "routes": routes, "points": exposed}, report
+    layers = {"hazard": hazard, "zones": zones, "influence": influence, "routes": routes, "points": exposed}
+    return layers | {"exposure": exposure}, report | {"parcels": exposure}

@@ -75,6 +75,17 @@ def main() -> int:
         basins = sorted({f["properties"]["basin"] for f in features})
         source = {"builtAt": built, "maps": {b: SOURCES[b] for b in basins}}
         sizes[layer] = write_collection(out / f"{layer}.geojson", features, source)
+    # exposed parcels per hazard level (Casca's map draws its 3 478 parcels; Quillcay's has none)
+    exposure = {
+        "source": {"builtAt": built, "maps": {"casca": SOURCES["casca"]}},
+        "casca": {
+            "parcels": c_layers["exposure"],
+            "rule": "Cada predio cuenta una vez, en el nivel de peligro más alto que cubre su punto interior.",
+        },
+    }
+    text = json.dumps(exposure, ensure_ascii=False, separators=(",", ":"))
+    (out / "exposure.json").write_text(text + "\n", encoding="utf-8")
+    sizes["exposure"] = len(text.encode("utf-8"))
     print(json.dumps({"quillcay": q_report, "casca": c_report, "bytes": sizes}, ensure_ascii=False, indent=1))
     return 0
 
