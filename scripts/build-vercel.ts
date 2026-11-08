@@ -16,7 +16,8 @@ const out = `${root}.vercel/output`;
 export const FUNCTIONS = ['api/panel', 'api/health', 'api/cron/collect'];
 /** 06:00 in Lima (UTC−5). Hobby plans allow one run per day. */
 export const CRON = { path: '/api/cron/collect', schedule: '0 11 * * *' };
-export const REGION = 'gru1'; // São Paulo, the closest Vercel region to Huaraz
+/** São Paulo, the closest Vercel region to Huaraz; FUNCTION_REGION overrides it (e.g. to test another region) */
+export const REGION = process.env.FUNCTION_REGION || 'gru1';
 
 export const vcConfig = {
   runtime: 'nodejs22.x',
