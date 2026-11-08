@@ -47,6 +47,12 @@ export const outputConfig = {
       headers: { 'cache-control': 'public, max-age=31536000, immutable' },
       continue: true,
     },
+    // the map's module worker: with nosniff the browser refuses it unless typed as JavaScript
+    {
+      src: '^/assets/.*\\.mjs$',
+      headers: { 'content-type': 'text/javascript; charset=utf-8' },
+      continue: true,
+    },
     { handle: 'filesystem' },
   ],
   crons: [CRON],

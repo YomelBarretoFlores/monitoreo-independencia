@@ -19,6 +19,16 @@ describe('Vercel build output', () => {
     });
   });
 
+  it('serves the map worker (.mjs) as JavaScript before the filesystem, since nosniff is on', () => {
+    const i = outputConfig.routes.findIndex((r) => 'src' in r && r.src === '^/assets/.*\\.mjs$');
+    expect(i).toBeGreaterThan(-1);
+    expect(outputConfig.routes[i]).toMatchObject({
+      headers: { 'content-type': 'text/javascript; charset=utf-8' },
+      continue: true,
+    });
+    expect(i).toBeLessThan(outputConfig.routes.findIndex((r) => 'handle' in r));
+  });
+
   it('runs the bundled server/vercel.mjs on Node with up to 300 s per request', () => {
     expect(vcConfig).toMatchObject({
       handler: 'server/vercel.mjs',
