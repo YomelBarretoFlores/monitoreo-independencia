@@ -8,5 +8,3 @@ dist/
 .vercel/
 __pycache__/
 
-# teardown kit renders (film frames, video)
-teardown-out/

@@ -35,7 +35,7 @@ Branch: `feat/3d-showcase` (continues showcase-3d). Delivery: work-unit commits;
 | T7 | S10 | inline | done: a "Mapas y datos fijos" table on Fuentes (IGN, ANA, Esri, AWS Terrain Tiles, both GeoPDF maps, OSIPTEL, INEI 2017, ESCALE, RENIPRESS, every alluvion study), shown even before the panel loads; `CENTROS_SOURCES` kept in sync with the data file (RED→GREEN 4 tests). Chrome: 25 sources listed | see git log |
 | T8 | S11 | inline | done: `bindTooltips` shows an immediate tooltip on hover and keyboard focus for all 10 controls (ours with descriptive data-tip; MapLibre's from their title, moved so the native one does not double); probe: 10/10 with text, 0 native titles, focus works; pause probe still 0/20 misses | see git log |
 | T9 | S13 | inline | done: RED: real mouse press (90 ms) missed 20/20, because the play button's content was replaced every frame; GREEN 0/20 after redrawing only on state change, with icons set to pointer-events none | see git log |
-| T10 | S12 | inline | pending: delete teardown-out/ and its .gitignore rule | — |
+| T10 | S12 | inline | done: deleted `teardown-out/` (the 30 MB local video), its .gitignore rule and the scratch renders; `git grep teardown` finds nothing outside the odd/ history notes. The teardown skill itself stays installed (it is the user's tool, not project output) | see git log |
 
 ## Log
 
