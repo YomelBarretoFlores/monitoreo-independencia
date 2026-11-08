@@ -1,18 +1,21 @@
 // Contract of data/safe-zones/*.geojson (extracted from the two GeoPDFs by scripts/geopdf).
-import { readFileSync } from 'node:fs';
 import type { Feature, FeatureCollection } from 'geojson';
+import hazardRaw from '../../data/safe-zones/hazard.geojson?raw';
+import influenceRaw from '../../data/safe-zones/influence.geojson?raw';
+import pointsRaw from '../../data/safe-zones/points.geojson?raw';
+import routesRaw from '../../data/safe-zones/routes.geojson?raw';
+import zonesRaw from '../../data/safe-zones/zones.geojson?raw';
 import { describe, expect, it } from 'vitest';
 import { EXPOSED_KINDS, HAZARD_LEVELS, MAP_SOURCES, SAFE_KINDS } from '../../src/lib/safezones.ts';
 
 type Fc = FeatureCollection & { source: { builtAt: string; maps: Record<string, Record<string, unknown>> } };
-const read = (name: string) =>
-  JSON.parse(readFileSync(new URL(`../../data/safe-zones/${name}.geojson`, import.meta.url), 'utf8')) as Fc;
+const read = (raw: string) => JSON.parse(raw) as Fc;
 
-const hazard = read('hazard');
-const zones = read('zones');
-const influence = read('influence');
-const routes = read('routes');
-const points = read('points');
+const hazard = read(hazardRaw);
+const zones = read(zonesRaw);
+const influence = read(influenceRaw);
+const routes = read(routesRaw);
+const points = read(pointsRaw);
 
 /** Both maps lie within this lon/lat box (frames of the two GeoPDFs) */
 const BOX = { minLon: -77.55, maxLon: -77.49, minLat: -9.55, maxLat: -9.47 };

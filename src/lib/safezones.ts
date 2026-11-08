@@ -68,13 +68,16 @@ const label = <T extends { id: string; label: string }>(list: readonly T[], id: 
 export const basinLabel = (id: string) => label(BASINS, id);
 export const hazardLabel = (id: string) => label(HAZARD_LEVELS, id);
 
+type Kind = { id: string; label: string; color: string };
+const kindsOf = (group: PlaceProps['group']): readonly Kind[] =>
+  group === 'seguro' ? SAFE_KINDS : EXPOSED_KINDS;
+
 export function placeLabel(p: Pick<PlaceProps, 'group' | 'kind'>): string {
-  return label(p.group === 'seguro' ? SAFE_KINDS : EXPOSED_KINDS, p.kind);
+  return label(kindsOf(p.group), p.kind);
 }
 
 export function placeColor(p: Pick<PlaceProps, 'group' | 'kind'>): string {
-  const list = p.group === 'seguro' ? SAFE_KINDS : EXPOSED_KINDS;
-  return list.find((x) => x.id === p.kind)?.color ?? '#666';
+  return kindsOf(p.group).find((x) => x.id === p.kind)?.color ?? '#666';
 }
 
 // ---------------------------------------------------------------- filters
