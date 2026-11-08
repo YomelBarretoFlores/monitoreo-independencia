@@ -1,0 +1,44 @@
+/* The past-alluvion box in the simulation card (src/sections/simulator.ts) */
+
+.sim-event {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+}
+
+.sim-event h4 {
+  margin: 0;
+  font-size: var(--t-md);
+  color: var(--ink);
+}
+
+.sim-event p {
+  margin: 0;
+}
+
+/* .sim-evidence ul (views.css) lays out the figures list as a grid: these counts wrap in one band instead */
+.sim-evidence .sim-event-n {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sim-event-n b {
+  color: var(--ink);
+}
+
+.sim-event-src {
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+.sim-event-src a {
+  color: var(--ink-2);
+}

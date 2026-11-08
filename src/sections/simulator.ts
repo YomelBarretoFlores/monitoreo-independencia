@@ -7,6 +7,7 @@ import {
   type LakeStatus,
   SOURCES,
 } from '../lib/glof.ts';
+import { CASCA_2025, type EventSource } from '../lib/glof-events.ts';
 import { icon } from '../ui/icons.ts';
 
 // Card under the map: opens the alluvion simulation on the map itself (src/sections/glof-sim.ts) and shows
@@ -31,6 +32,30 @@ const sourceLink = (id: keyof typeof SOURCES) => {
   return `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label.split(',')[0]!)} (${s.year})</a>`;
 };
 
+const eventLink = (s: EventSource) =>
+  `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a>`;
+
+/** The alluvion that already hit the district: real evidence next to the simulated scenarios */
+function renderCasca2025(): string {
+  const e = CASCA_2025;
+  const n = (v: number) => `<b>${fmtNum(v)}</b>`;
+  return `<article class="sim-event" aria-labelledby="sim-event-h">
+      <p class="sim-k">Ya ocurrió</p>
+      <h4 id="sim-event-h">${esc(e.title)} · ${esc(e.date)}</h4>
+      <p>${esc(e.origin)} Afectó ${esc(e.places.slice(0, -1).join(', '))} y ${esc(e.places.at(-1)!)}.</p>
+      <ul class="sim-event-n">
+        <li>${n(e.people.deaths)} fallecidos</li>
+        <li>${n(e.people.injured)} heridos</li>
+        <li>${n(e.people.homeless)} damnificados</li>
+        <li>${n(e.people.affected)} afectados</li>
+        <li>${n(e.homes.destroyed)} vivienda destruida</li>
+        <li>${n(e.homes.uninhabitable)} inhabitables</li>
+        <li>${n(e.homes.affected)} viviendas afectadas</li>
+      </ul>
+      <p class="sim-event-src">Cifras al ${esc(e.asOf)}. Fuentes: ${eventLink(e.sources.indeci)}; ${eventLink(e.sources.inspection)}.</p>
+    </article>`;
+}
+
 export function renderSimulator(): string {
   const evidence = ARRIVAL_EVIDENCE.map(
     (e) => `<li class="sim-ev sim-ev-${e.kind}">
@@ -53,6 +78,7 @@ export function renderSimulator(): string {
       <p class="muted sim-note">Simulación ilustrativa, no es un modelo oficial. Entre los puntos que publican los estudios, el avance se interpola.</p>
     </div>
     <div class="sim-evidence">
+      ${renderCasca2025()}
       <p class="sim-k">Las cifras que circulan y qué son</p>
       <ul>${evidence}</ul>
     </div>

@@ -4,6 +4,7 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import './styles/views.css';
+import './styles/glof-event.css';
 import type { Panel } from '../shared/types.ts';
 import { timeAgo } from './lib/format.ts';
 import { rebaseDates } from './lib/panel.ts';
