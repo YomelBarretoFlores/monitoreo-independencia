@@ -52,7 +52,8 @@ a {
   text-underline-offset: 3px;
 }
 
-a:hover {
+/* plain text links only: classed anchors (buttons, tiles, skip link) set their own hover colours */
+a:not([class]):hover {
   color: var(--accent-ink);
 }
 
