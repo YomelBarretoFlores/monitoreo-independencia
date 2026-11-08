@@ -2149,3 +2149,9 @@
 .gs-time input {
   height: 28px;
 }
+
+/* the press always lands on the button itself, never on its icon */
+.gs-play > *,
+.gs-close > * {
+  pointer-events: none;
+}

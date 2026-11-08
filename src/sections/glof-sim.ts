@@ -323,8 +323,13 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
     }
     const span = end() - start();
     timeInput.value = String(Math.round(((t - start()) / span) * 1000));
-    playBtn.innerHTML = playing ? '<span aria-hidden="true">❚❚</span>' : icon('play');
-    playBtn.setAttribute('aria-label', playing ? 'Pausar' : 'Reproducir');
+    // redraw the button only when its state changes: replacing its content on every frame made a press land
+    // on a node that no longer existed by the time the mouse came up, so the click was lost
+    if (playBtn.dataset.playing !== String(playing)) {
+      playBtn.dataset.playing = String(playing);
+      playBtn.innerHTML = playing ? '<span aria-hidden="true">❚❚</span>' : icon('play');
+      playBtn.setAttribute('aria-label', playing ? 'Pausar' : 'Reproducir');
+    }
     // the camera follows the front down the valley, looking downstream
     if (follow && front && r && playing && now - lastCam > 700) {
       lastCam = now;

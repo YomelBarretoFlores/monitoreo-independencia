@@ -16,6 +16,10 @@ Branch: `feat/3d-showcase` (continues showcase-3d). Delivery: work-unit commits;
 - S6 (verbatim): "debería de haber un botón de restablecer o algo así para que el mapa se coloque a su posición original." → a "Restablecer vista" control returns to the initial view and stops the tour and the simulation.
 - S7 (verbatim): "Y sobre el recorrido solo es de algunos que muestra el recorrido cierto?" → the tour covers 10 villages by default, with an option for all of them.
 - S8 (verbatim): "el botón de abrir la simulación 3D al hacer hover también se vuelve blanco, lo mismo para ver el PDF, quizás pase lo mismo en muchos otros botones o URL." → link buttons stay readable on hover, everywhere.
+- S10 (verbatim): "sobre la página de fuentes, están todas?, por ejemplo creo que usaste OSIPTEL incluso." → the Fuentes page also lists the fixed and map sources: centros poblados, alluvion studies, GeoPDF maps, IGN, ANA, base maps and terrain.
+- S11 (verbatim): "sobre el mapa, cuando haga hover sobre los controles quisiera que salga como un tooltip para que el usuario sepa para qué sirve." → every map control shows a tooltip on hover and on keyboard focus.
+- S12 (verbatim): "Y haz eliminado todo lo que generaste con la skill de teardown cierto?" → nothing generated with teardown remains: no code, no output folder, no ignore rule.
+- S13 (verbatim): "creo que colocar pausa la simulación a veces se traba, revisa eso también." → play/pause responds to every real click.
 - S9 (carried): proposal, not official; no logos or authority names; every figure has a source; no WAF bypass; UI in Spanish, code in English; good practices and performance.
 
 ## Tasks
@@ -28,6 +32,10 @@ Branch: `feat/3d-showcase` (continues showcase-3d). Delivery: work-unit commits;
 | T4 | S3, S4 | inline | done: `src/lib/palcacocha.ts` → `src/lib/glof.ts`; LAKES (timed / comparable / no-study, volume + source), scenario r1941 (Mergili 36–70 min, stops at the city), Somos range 1.05–1.32 h, ARRIVAL_EVIDENCE (79, 63–79, 36–70, 30 = evacuation, 15 = no source), `floodGradient`, `cityRevealAt` (RED→GREEN 6 new tests; 185 total). Unverifiable Guardian URL dropped; the NASA URL was verified | see git log |
 | T5 | S1, S2, S3, S4 | inline | done: `src/sections/glof-sim.ts` (line-gradient flood on each lake route over imagery and terrain, front marker, Quillcay/Casca hazard reveal, camera following downstream, strip under the map: lake, scenario, play, scrub, speed, follow, readouts with published range); "Aluvión" control; card with ARRIVAL_EVIDENCE and lakes (RED→GREEN 5 tests); helpers pointAlong, bearingAlong, playRate, simEnd (RED→GREEN 3); teardown page removed (`sims/`, `public/simulador`, `scripts/sim`, `build:sim`). Playwright smoke 33/33 (every control, lakes, scenarios, base maps, reset, remount, full tour end notice, hover colours, zero console errors) | see git log |
 | T6 | S1 | inline | optional: record the map version as a video, if the user wants it | — |
+| T7 | S10 | inline | pending: fixed and map sources on the Fuentes page | — |
+| T8 | S11 | inline | pending: tooltips on the map controls | — |
+| T9 | S13 | inline | done: RED: real mouse press (90 ms) missed 20/20, because the play button's content was replaced every frame; GREEN 0/20 after redrawing only on state change, with icons set to pointer-events none | see git log |
+| T10 | S12 | inline | pending: delete teardown-out/ and its .gitignore rule | — |
 
 ## Log
 
@@ -43,3 +51,5 @@ Branch: `feat/3d-showcase` (continues showcase-3d). Delivery: work-unit commits;
 - L4: Sources check: the NASA EO page 3343 holds the "15 minutes" forecast (verified by search). The original URL of The Guardian 2018 article could not be confirmed (only syndicated copies), so the 30 min figure cites GORE Áncash 2021 alone.
 - L5: Map version review in Chrome: the strip covered the bottom half of the map and the open Capas panel covered the top, so the strip moved under the map (inside the card, so it joins full screen) and Capas folds on open. Mark labels shortened (they overlapped). The smoke check for the 1941 marks was tautological at first; fixed and rerun on the final code.
 - L6: The independent verifier found S1–S9 met, plus one blocker: `a:not([class]):hover` raised the specificity to (0,2,1), so "Fuente:" links (`.src a`) changed hover colour. Fixed with `a:where(:not([class])):hover`; recheck: `.src a` hover rgb(59,63,70), equal to the baseline, and `a.btn` stays readable. Advisories fixed: Baer 2016 title, the NASA URL (now science.nasa.gov), the countdown now shows the published range instead of an unpublished midpoint, larger touch targets. Smoke rerun 33/33.
+- L7 (2026-11-08, user, verbatim): "Bien, todo correcto entonces?, sobre la página de fuentes, están todas?, por ejemplo creo que usaste OSIPTEL incluso. Y sobre el mapa, cuando haga hover sobre los controles quisiera que salga como un tooltip para que el usuario sepa para qué sirve. Y haz eliminado todo lo que generaste con la skill de teardown cierto? Y creo que colocar pausa la simulación a veces se traba, revisa eso también."
+- L8: The pause bug was missed by the earlier smoke run because Playwright's click() presses and releases instantly. The new probe holds the press for 90 ms, as a person does.
