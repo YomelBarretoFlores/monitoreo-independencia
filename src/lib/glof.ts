@@ -1,10 +1,11 @@
 // Glacial lake outburst floods (aluviones) above Huaraz and Independencia: published figures and the
 // illustrative model the map animation runs on. Pure (no DOM, no map).
 //
-// Only Laguna Palcacocha has published, timed models: Somos-Valenzuela et al. 2016 (HESS 20, 2519),
+// Two lakes have published, timed models. Laguna Palcacocha: Somos-Valenzuela et al. 2016 (HESS 20, 2519),
 // Table 6, at the dam, the city entrance and the city exit, and the 1941 reconstruction of Mergili et al.
-// 2020. Between those points the front advances linearly in distance and the peak discharge decays
-// log-linearly. That interpolation is ours; it is illustrative and not an official model.
+// 2020. Laguna Llaca: INAIGEM 2026 (subcuenca Casca), at the north of the city only. Between those points the
+// front advances linearly in distance and the peak discharge decays log-linearly. That interpolation is ours;
+// it is illustrative and not an official model.
 
 export interface Source {
   label: string;
@@ -95,6 +96,12 @@ export const SOURCES = {
     url: 'https://science.nasa.gov/earth/earth-observatory/glacial-collapse-threatens-huaraz-peru-3343/',
     year: 2003,
   },
+  inaigem2026casca: {
+    label:
+      'INAIGEM, «Evaluación del peligro de aluvión por desborde de laguna glaciar en la subcuenca Casca»',
+    url: 'https://repositorio.inaigem.gob.pe/items/88d3ced1-12f5-41b4-852f-7c559c342d3d',
+    year: 2026,
+  },
   terrain: {
     label: 'Relieve: AWS Terrain Tiles (Mapzen); cauce trazado por la máxima pendiente',
     url: 'https://registry.opendata.aws/terrain-tiles/',
@@ -150,8 +157,8 @@ interface Section {
   frontH: number;
   /** Published range of that arrival, hours, when the source gives one */
   rangeH?: [number, number];
-  /** Peak discharge, m³/s */
-  peakM3s: number;
+  /** Peak discharge, m³/s; null when the source does not publish it */
+  peakM3s: number | null;
 }
 
 export interface Scenario {
@@ -239,6 +246,56 @@ export const SCENARIOS: Record<ScenarioId, Scenario> = {
 
 export const SCENARIO_IDS: readonly ScenarioId[] = ['grande', 'mediano', 'pequeno', 'r1941'];
 
+// INAIGEM 2026: ice avalanches into Laguna Llaca (Tabla 9), the overtopping wave at the dam (Tabla 13), the
+// outlet peak discharge and the travel time to the north of the city (Huaraz and Independencia). The study
+// stops there and publishes no discharge downstream. About 1.5 min from the avalanche start to the overtopping.
+const LLACA_IMPACT_S = 90;
+const LLACA_NOTE = ' Además, un deslizamiento de la morrena izquierda de 0,39 millones de m³ (modelo).';
+export const LLACA_SCENARIOS: Partial<Record<ScenarioId, Scenario>> = {
+  grande: {
+    id: 'grande',
+    label: 'Grande',
+    note: `Avalancha de hielo de 3,9 millones de m³ sobre la laguna.${LLACA_NOTE}`,
+    avalancheM3: 3_857_000,
+    impactS: LLACA_IMPACT_S,
+    waveM: null,
+    overtopM: 33,
+    overtopPeakM3s: 53_800,
+    entrance: { frontH: 22 / 60, peakM3s: null },
+    exit: null,
+    floodKm2: null,
+    source: 'inaigem2026casca',
+  },
+  mediano: {
+    id: 'mediano',
+    label: 'Mediano',
+    note: `Avalancha de hielo de 2,6 millones de m³ sobre la laguna.${LLACA_NOTE}`,
+    avalancheM3: 2_635_000,
+    impactS: LLACA_IMPACT_S,
+    waveM: null,
+    overtopM: 15,
+    overtopPeakM3s: 42_300,
+    entrance: { frontH: 25 / 60, peakM3s: null },
+    exit: null,
+    floodKm2: null,
+    source: 'inaigem2026casca',
+  },
+  pequeno: {
+    id: 'pequeno',
+    label: 'Pequeño',
+    note: `Avalancha de hielo de 0,6 millones de m³ sobre la laguna.${LLACA_NOTE}`,
+    avalancheM3: 623_000,
+    impactS: LLACA_IMPACT_S,
+    waveM: null,
+    overtopM: 0.5,
+    overtopPeakM3s: 9_200,
+    entrance: { frontH: 41 / 60, peakM3s: null },
+    exit: null,
+    floodKm2: null,
+    source: 'inaigem2026casca',
+  },
+};
+
 /** Distances along the flow path, metres from the lake */
 export interface Route {
   lengthM: number;
@@ -282,14 +339,19 @@ export function arrivalAt(s: Scenario, r: Route, d: number): number {
   return st[st.length - 1]![0];
 }
 
-/** Peak discharge, m³/s, at distance d: log-linear between the dam, the city entrance and the city exit */
-export function dischargeAt(s: Scenario, r: Route, d: number): number {
+/**
+ * Peak discharge, m³/s, at distance d: log-linear between the dam, the city entrance and the city exit.
+ * Null below the dam when the source publishes no discharge at the city.
+ */
+export function dischargeAt(s: Scenario, r: Route, d: number): number | null {
+  const x = Math.min(Math.max(d, 0), r.lengthM);
+  const atCity = s.entrance.peakM3s;
+  if (atCity === null) return x <= 0 ? s.overtopPeakM3s : null;
   const pts: [number, number][] = [
     [0, s.overtopPeakM3s],
-    [r.entranceM, s.entrance.peakM3s],
-    [r.lengthM, s.exit?.peakM3s ?? s.entrance.peakM3s],
+    [r.entranceM, atCity],
+    [r.lengthM, s.exit?.peakM3s ?? atCity],
   ];
-  const x = Math.min(Math.max(d, 0), r.lengthM);
   for (let i = 1; i < pts.length; i++) {
     const [d0, q0] = pts[i - 1]!;
     const [d1, q1] = pts[i]!;
@@ -328,7 +390,7 @@ export interface SimState {
   frontM: number;
   /** frontM / route length */
   progress: number;
-  dischargeM3s: number;
+  dischargeM3s: number | null;
   detected: boolean;
   minutesToCity: number;
 }
@@ -395,6 +457,8 @@ export interface Lake {
   timingSource: SourceId | null;
   /** A flow route exists in data/glof/routes.json */
   routed: boolean;
+  /** The published scenarios, for timed lakes only */
+  scenarios: Partial<Record<ScenarioId, Scenario>> | null;
 }
 
 export const LAKES: Record<LakeId, Lake> = {
@@ -409,6 +473,7 @@ export const LAKES: Record<LakeId, Lake> = {
     timing: 'Tiempos de llegada publicados por modelo.',
     timingSource: 'somos2016',
     routed: true,
+    scenarios: SCENARIOS,
   },
   tullparaju: {
     id: 'tullparaju',
@@ -421,6 +486,7 @@ export const LAKES: Record<LakeId, Lake> = {
     timing: 'Modelada: tiempos «comparables a Palcacocha», sin minutos publicados.',
     timingSource: 'baer2016',
     routed: true,
+    scenarios: null,
   },
   cuchillacocha: {
     id: 'cuchillacocha',
@@ -433,18 +499,21 @@ export const LAKES: Record<LakeId, Lake> = {
     timing: 'Modelada: tiempos «comparables a Palcacocha», sin minutos publicados.',
     timingSource: 'baer2016',
     routed: true,
+    scenarios: null,
   },
   llaca: {
     id: 'llaca',
     name: 'Llaca',
-    status: 'no-study',
-    path: 'Quebrada Llaca → río Casca (norte de Independencia)',
-    volumeM3: 274_305,
-    volumeYear: 2004,
-    volumeSource: 'inaigem2016b',
-    timing: 'Sin estudio publicado de tiempos de llegada.',
-    timingSource: null,
+    status: 'timed',
+    path: 'Quebrada Llaca → río Casca → norte de Huaraz e Independencia',
+    // AAA Huarmey – Chicama bathymetry of April 2024, as cited by the INAIGEM 2026 study
+    volumeM3: 672_177,
+    volumeYear: 2024,
+    volumeSource: 'inaigem2026casca',
+    timing: 'Tiempos de llegada publicados por modelo: 41, 25 y 22 min al norte de la ciudad.',
+    timingSource: 'inaigem2026casca',
     routed: true,
+    scenarios: LLACA_SCENARIOS,
   },
   shallap: {
     id: 'shallap',
@@ -457,6 +526,7 @@ export const LAKES: Record<LakeId, Lake> = {
     timing: 'Sin estudio publicado de tiempos de llegada.',
     timingSource: null,
     routed: false,
+    scenarios: null,
   },
   rajucolta: {
     id: 'rajucolta',
@@ -469,6 +539,7 @@ export const LAKES: Record<LakeId, Lake> = {
     timing: 'Sin estudio publicado de tiempos de llegada.',
     timingSource: null,
     routed: false,
+    scenarios: null,
   },
 };
 
@@ -481,9 +552,12 @@ export const LAKE_IDS: readonly LakeId[] = [
   'rajucolta',
 ];
 
+/** The published scenario of a lake, or null when the lake has no timed study or no such scenario */
+export const scenarioOf = (lake: LakeId, id: ScenarioId): Scenario | null => LAKES[lake].scenarios?.[id] ?? null;
+
 export type EvidenceKind = 'modelo' | 'sensibilidad' | 'reconstruccion' | 'evacuacion' | 'sin-fuente';
 
-/** Every time figure people quote for Palcacocha, and what it really is */
+/** Every time figure people quote for an alluvion on the city, and what it really is */
 export const ARRIVAL_EVIDENCE: readonly {
   value: string;
   kind: EvidenceKind;
@@ -507,6 +581,12 @@ export const ARRIVAL_EVIDENCE: readonly {
     kind: 'reconstruccion',
     what: 'Reconstrucción del aluvión de 1941. El estudio aclara que no hay tiempos documentados de ese día.',
     source: 'mergili2020',
+  },
+  {
+    value: '22–41 min',
+    kind: 'modelo',
+    what: 'Laguna Llaca: llegada al norte de la ciudad por el río Casca, de la avalancha más grande a la más pequeña.',
+    source: 'inaigem2026casca',
   },
   {
     value: '30 min',

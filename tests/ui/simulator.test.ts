@@ -26,6 +26,8 @@ describe('alluvion simulation card', () => {
     expect(html).toContain('Con tiempos publicados');
     expect(html).toContain('Sin minutos publicados');
     expect(html).toContain('Sin estudio');
+    expect(html).toContain('Palcacocha y Llaca tienen tiempos publicados');
+    expect(html).not.toContain('Solo Palcacocha');
   });
 
   it('says it is illustrative and not official', () => {

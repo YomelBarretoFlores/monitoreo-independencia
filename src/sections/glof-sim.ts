@@ -13,8 +13,10 @@ import {
   playRate,
   pointAlong,
   SCENARIO_IDS,
+  type Scenario,
   type ScenarioId,
   SCENARIOS,
+  scenarioOf,
   simEnd,
   SOURCES,
   stateAt,
@@ -78,9 +80,13 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
   let lastCam = 0;
 
   const route = () => deps.routes[lake] ?? null;
-  const timed = () => LAKES[lake].status === 'timed';
+  /** The chosen scenario of a timed lake (setLake keeps it valid for the lake) */
+  const scen = (): Scenario | null => scenarioOf(lake, scenario);
+  const timed = () => LAKES[lake].status === 'timed' && !!scen();
   const animated = () => LAKES[lake].status !== 'no-study' && !!route();
-  const end = () => (timed() ? simEnd(SCENARIOS[scenario]) : UNTIMED_S + 12);
+  // the early-warning system is Palcacocha's, in the Quillcay basin: it says nothing about the río Casca
+  const warned = () => route()?.entranceMap !== 'casca';
+  const end = () => (timed() ? simEnd(scen()!) : UNTIMED_S + 12);
   const start = () => (timed() ? START : 0);
 
   // ------------------------------------------------------------ the control strip
@@ -206,7 +212,7 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
         r && r.entranceM !== null && animated() ? mark(r.entranceM / r.lengthM, 'Ciudad') : '';
       return;
     }
-    const s = SCENARIOS[scenario];
+    const s = scen()!;
     const span = end() - start();
     const at = (sec: number) => (sec - start()) / span;
     marks.innerHTML =
@@ -232,7 +238,13 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
         : EMPTY_LINE,
     );
     m.setFilter('glof-city', ['==', ['get', 'basin'], r?.entranceMap ?? 'none']);
-    for (const b of strip.querySelectorAll<HTMLButtonElement>('[data-scenario]')) b.disabled = !timed();
+    // each timed lake has its own scenarios (Llaca has no 1941 reconstruction): keep the choice valid
+    if (LAKES[id].scenarios && !scen()) setScenario('grande');
+    for (const b of strip.querySelectorAll<HTMLButtonElement>('[data-scenario]')) {
+      const s = scenarioOf(id, b.dataset.scenario as ScenarioId);
+      b.disabled = !s;
+      b.title = (s ?? SCENARIOS[b.dataset.scenario as ScenarioId]).note;
+    }
     playBtn.disabled = !animated();
     timeInput.disabled = !animated();
     t = start();
@@ -259,7 +271,7 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
     const r = route();
     const L = LAKES[lake];
     if (playing && animated()) {
-      const rate = timed() ? playRate(SCENARIOS[scenario], t) : 1;
+      const rate = timed() ? playRate(scen()!, t) : 1;
       t = Math.min(end(), t + dt * speed * rate);
       if (t >= end()) playing = false;
     }
@@ -267,7 +279,7 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
     let reveal = 0;
     let html = '';
     if (r && timed()) {
-      const s = SCENARIOS[scenario];
+      const s = scen()!;
       const st = stateAt(s, makeRoute(r.lengthM, r.entranceM ?? r.lengthM), t);
       frontM = st.frontM;
       reveal = cityRevealAt(s, t);
@@ -289,9 +301,9 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
       html = `<span class="gs-phase">${esc(PHASE_LABEL[st.phase])}</span>
         <span><small>Desde ${s.avalancheM3 ? 'la avalancha' : 'la rotura'}</small><b>${t < 0 ? '—' : clock(t)}</b></span>
         <span><small>Recorrido</small><b>${fmtNum(frontM / 1000, 1)} / ${fmtNum(r.lengthM / 1000, 1)} km</b></span>
-        <span><small>Caudal pico en el frente</small><b>${frontM > 0 ? `${fmtNum(st.dischargeM3s)} m³/s` : '—'}</b></span>
+        <span><small>Caudal pico en el frente</small><b>${frontM <= 0 ? '—' : st.dischargeM3s === null ? 'no publicado' : `${fmtNum(st.dischargeM3s)} m³/s`}</b></span>
         <span><small>Llegada a la ciudad (publicado)</small><b>${cityText}</b></span>
-        <span><small>Falta para la ciudad</small><b class="${st.minutesToCity > 0 && st.minutesToCity <= WARNING.minutes ? 'gs-hot' : ''}">${t < 0 ? '—' : left}</b></span>`;
+        <span><small>Falta para la ciudad</small><b class="${warned() && st.minutesToCity > 0 && st.minutesToCity <= WARNING.minutes ? 'gs-hot' : ''}">${t < 0 ? '—' : left}</b></span>`;
     } else if (r && animated()) {
       const p = Math.min(1, t / UNTIMED_S);
       frontM = p * r.lengthM;
@@ -350,12 +362,16 @@ export function createGlofSim(m: MapLibre, deps: GlofSimDeps): GlofSim {
   const writeNote = () => {
     const L = LAKES[lake];
     const timingSrc = L.timingSource ? SOURCES[L.timingSource] : null;
-    const scen = SCENARIOS[scenario];
+    const s = scen();
     note.innerHTML = `${
-      timed()
-        ? `${esc(scen.note)} Fuente: ${esc(SOURCES[scen.source].label.split(',')[0]!)} (${SOURCES[scen.source].year}). Entre los puntos publicados el avance se interpola.`
+      timed() && s
+        ? `${esc(s.note)} Fuente: ${esc(SOURCES[s.source].label.split(',')[0]!)} (${SOURCES[s.source].year}). Entre los puntos publicados el avance se interpola.`
         : `${esc(L.timing)}${timingSrc ? ` Fuente: ${esc(timingSrc.label.split(',')[0]!)} (${timingSrc.year}).` : ''}`
-    } Alerta temprana: hasta ${WARNING.minutes} min de aviso (Gobierno Regional de Áncash, 2021). ${esc(WARNING.status)} Simulación ilustrativa, no es un modelo oficial.`;
+    }${
+      warned()
+        ? ` Alerta temprana: hasta ${WARNING.minutes} min de aviso (Gobierno Regional de Áncash, 2021). ${esc(WARNING.status)}`
+        : ' El sistema de alerta temprana del Gobierno Regional vigila la laguna Palcacocha, no la laguna Llaca.'
+    } Simulación ilustrativa, no es un modelo oficial.`;
   };
 
   // ------------------------------------------------------------ controls

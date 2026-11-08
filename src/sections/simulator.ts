@@ -47,7 +47,7 @@ export function renderSimulator(): string {
     <div class="sim-body">
       <p class="sim-k">Simulación del aluvión en el mapa</p>
       <h3 id="sim-h">¿Cuánto tardaría un aluvión en llegar a Huaraz e Independencia?</h3>
-      <p>La simulación corre sobre la imagen satelital y el relieve reales del mapa de arriba: el aluvión baja por el cauce que sale del propio relieve, y al llegar a la ciudad se marca el mapa de peligro oficial. Solo Palcacocha tiene tiempos publicados; para las otras lagunas se muestra lo que dicen los estudios.</p>
+      <p>La simulación corre sobre la imagen satelital y el relieve reales del mapa de arriba: el aluvión baja por el cauce que sale del propio relieve, y al llegar a la ciudad se marca el mapa de peligro oficial. Palcacocha y Llaca tienen tiempos publicados; para las otras lagunas se muestra lo que dicen los estudios.</p>
       <p class="sim-links"><button type="button" class="btn" data-glof-open>${icon('flood')}<span>Ver la simulación en el mapa</span></button></p>
       <ul class="sim-lakes">${lakes}</ul>
       <p class="muted sim-note">Simulación ilustrativa, no es un modelo oficial. Entre los puntos que publican los estudios, el avance se interpola.</p>

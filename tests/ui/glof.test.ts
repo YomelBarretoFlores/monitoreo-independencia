@@ -14,6 +14,8 @@ import {
   makeRoute,
   phaseAt,
   SCENARIOS,
+  type ScenarioId,
+  scenarioOf,
   SOURCES,
   stateAt,
   warningAt,
@@ -110,8 +112,71 @@ describe('lakes and the evidence behind each time', () => {
     expect(LAKES.palcacocha.status).toBe('timed');
     expect(LAKES.tullparaju.status).toBe('comparable');
     expect(LAKES.cuchillacocha.status).toBe('comparable');
-    for (const id of ['llaca', 'shallap', 'rajucolta'] as const) expect(LAKES[id].status).toBe('no-study');
+    expect(LAKES.llaca.status).toBe('timed');
+    for (const id of ['shallap', 'rajucolta'] as const) expect(LAKES[id].status).toBe('no-study');
     for (const l of Object.values(LAKES)) expect(SOURCES[l.volumeSource]).toBeDefined();
+  });
+
+  it('gives every timed lake its own scenarios, and only the timed lakes', () => {
+    for (const l of Object.values(LAKES)) expect(l.scenarios !== null).toBe(l.status === 'timed');
+    expect(LAKES.palcacocha.scenarios).toBe(SCENARIOS);
+    expect(scenarioOf('palcacocha', 'r1941')).toBe(SCENARIOS.r1941);
+    expect(scenarioOf('tullparaju', 'grande')).toBeNull();
+  });
+});
+
+describe('Llaca scenarios (INAIGEM 2026, subcuenca Casca)', () => {
+  const s = (id: ScenarioId) => scenarioOf('llaca', id)!;
+
+  it('keeps the published arrival at the north of the city: 41, 25 and 22 minutes', () => {
+    expect(s('pequeno').entrance.frontH * 60).toBeCloseTo(41, 9);
+    expect(s('mediano').entrance.frontH * 60).toBeCloseTo(25, 9);
+    expect(s('grande').entrance.frontH * 60).toBeCloseTo(22, 9);
+    for (const id of ['grande', 'mediano', 'pequeno'] as const) {
+      expect(s(id).source).toBe('inaigem2026casca');
+      // the study stops at the city: no río Santa time, no downstream discharge
+      expect(s(id).exit).toBeNull();
+      expect(s(id).entrance.peakM3s).toBeNull();
+    }
+  });
+
+  it('keeps the published avalanche volumes and outlet peak discharges', () => {
+    expect(s('grande').avalancheM3).toBe(3_857_000);
+    expect(s('mediano').avalancheM3).toBe(2_635_000);
+    expect(s('pequeno').avalancheM3).toBe(623_000);
+    expect(s('grande').overtopPeakM3s).toBe(53_800);
+    expect(s('mediano').overtopPeakM3s).toBe(42_300);
+    expect(s('pequeno').overtopPeakM3s).toBe(9_200);
+  });
+
+  it('has no 1941 reconstruction', () => {
+    expect(scenarioOf('llaca', 'r1941')).toBeNull();
+  });
+
+  it('uses the 2024 bathymetry the study cites', () => {
+    expect(LAKES.llaca.volumeM3).toBe(672_177);
+    expect(LAKES.llaca.volumeYear).toBe(2024);
+    expect(LAKES.llaca.timingSource).toBe('inaigem2026casca');
+  });
+
+  it('gives no discharge downstream of the dam, where the study publishes none', () => {
+    const r = makeRoute(14_133, 9_406);
+    expect(dischargeAt(s('grande'), r, 0)).toBe(53_800);
+    expect(dischargeAt(s('grande'), r, 5_000)).toBeNull();
+    expect(stateAt(s('grande'), r, 10 * 60).dischargeM3s).toBeNull();
+  });
+
+  it('stops the front at the city entrance after the published time', () => {
+    const r = makeRoute(14_133, 9_406);
+    expect(frontAt(s('grande'), r, 22 * 60)).toBeCloseTo(9_406, 6);
+    expect(frontAt(s('grande'), r, 60 * 60)).toBe(9_406);
+    expect(simEnd(s('grande'))).toBe(22 * 60 + 1200);
+  });
+
+  it('lists the Llaca times among the figures that circulate, with their source', () => {
+    const e = ARRIVAL_EVIDENCE.find((x) => x.source === 'inaigem2026casca')!;
+    expect(e.value).toBe('22–41 min');
+    expect(e.kind).toBe('modelo');
   });
 
   it('keeps the published ranges: Somos 2016 sensitivity and the 1941 reconstruction', () => {

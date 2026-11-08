@@ -21,7 +21,7 @@ gestión municipal (inversiones y contrataciones) y resultados electorales del d
 | Riesgo y población | CENEPRED – escenario FEN 2027 | 24 h |
 | Inversiones, contrataciones, elecciones | Importados de `resultados-ancash` (MEF, Infobras, OECE, ONPE) | fijo |
 | Zonas seguras ante aluvión | GeoPDF de Quillcay (MPH con la MDI, SINIA) y de Casca (INAIGEM), extraídos a `data/safe-zones/` | fijo |
-| Simulación del aluvión en el mapa | Tiempos: Somos-Valenzuela et al. 2016 y Mergili et al. 2020 (solo Palcacocha); Baer 2016 y Frey 2018 (Tullparaju, Cuchillacocha, sin minutos); batimetrías ANA e INAIGEM; rutas por relieve AWS Terrain Tiles (`src/lib/glof.ts`, `data/glof/routes.json`) | fijo |
+| Simulación del aluvión en el mapa | Tiempos: Somos-Valenzuela et al. 2016 y Mergili et al. 2020 (Palcacocha), INAIGEM 2026 (Llaca, subcuenca Casca); Baer 2016 y Frey 2018 (Tullparaju, Cuchillacocha, sin minutos); batimetrías ANA e INAIGEM; rutas por relieve AWS Terrain Tiles (`src/lib/glof.ts`, `data/glof/routes.json`) | fijo |
 | Brechas por centro poblado (columnas 3D) | OSIPTEL 2025, INEI Censos 2017, MINEDU ESCALE, SUSALUD RENIPRESS (`data/centros-poblados.json`) | fijo |
 
 No se usan fuentes con login, captcha o protección anti-robots. Quedan fuera: estaciones de SENAMHI
