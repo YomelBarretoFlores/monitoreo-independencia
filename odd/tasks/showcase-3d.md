@@ -30,9 +30,9 @@ Branch: `feat/3d-showcase` (from `main` 52903b1). Delivery: work-unit commits on
 | T1 | S1, S3 | delegated (research: many web lookups) | done: ANA 2016 bathymetry, Somos-Valenzuela 2016 Table 6 (3 scenarios), INDECI 2015 exposure, GORE 2021 warning time, Defensoría 2026 SAT status, Mergili 2020 (~23 km), Huggel 2020 (1941) → `src/lib/palcacocha.ts` SOURCES | (in T3 commit) |
 | T2 | S2, S3 | delegated (research: many web lookups) | done: OSIPTEL 2025 per centro poblado (coords, urban/rural, 4G; ODC-By) as master list; INEI 2017 directory PDF (population, dwellings; 136 CP); MVCS DATASS API (rural water 7101 / sanitation 7102); ESCALE padrón (schools, coords); RENIPRESS (health, coords). No per-CP 2025 census yet | — |
 | T3 | S1, S3, S4 | inline | done: `scripts/sim/terrain.py` (AWS terrain, flow path by steepest descent 25.1 km, entrance 22.2 km into the official hazard map; overlays from app data), model `src/lib/palcacocha.ts` (RED→GREEN 11 tests), `sims/palcacocha-{shared,live,film}`, `npm run build:sim` → `public/simulador/palcacocha.html` (799 KB) + `elevation.glb` (151 KB); Mapa card `src/sections/simulator.ts` (RED→GREEN 4 tests); Chrome: scenarios, views, layers, no console errors | see git log |
-| T4 | S1 | inline | pending: film script, score and the final MP4 | — |
-| T5 | S2, S3, S4 | inline | pending: gap index data and 3D columns on the map, with a legend and sources | — |
-| T6 | S2 | inline | pending: automatic camera tour (casco urbano → caseríos → lagunas) | — |
+| T4 | S1 | inline | done: `sims/palcacocha-shared/score.py` + `palcacocha-film/timeline.json`; 56 s 1920×1080 60 fps MP4 with score (−14 LUFS) reviewed by frame sheet; file kept in `teardown-out/` (gitignored) | f549923 |
+| T5 | S2, S3, S4 | inline | done: `scripts/centros/build.py` → `data/centros-poblados.json` (312 CP, 144 Independencia; INEI 2017 rows sum to the printed district totals), `src/lib/centros.ts` (RED→GREEN 8 tests), fill-extrusion `cp-columns` (height = index, side = population), Capas toggle with legend, popup; Chrome verified | see git log |
+| T6 | S2 | inline | done: "Recorrido automático" flies Centenario → 3 rural villages of Independencia with the largest gaps (pop ≥ 30) → Palcacocha; folds the panel, any input stops it; Chrome verified | see git log |
 
 ## Log
 
@@ -42,3 +42,4 @@ Branch: `feat/3d-showcase` (from `main` 52903b1). Delivery: work-unit commits on
 - L4: Cross-check: the DEM flow path enters the official Quillcay hazard map 22.2 km from the lake; Mergili 2020 gives "about 23 km" lake → Huaraz.
 - L5: T2 research: per-centro-poblado sources found (see T2). Scratch downloads (426 MB) are kept outside the repo for T5 and removed after it.
 - L6: Camera: the Cordillera's parallel SW–NE ridges block side views; every view looks up-valley from the SW, and a guard keeps the line of sight above the terrain.
+- L7: Index (assumption, stated in UI and data): equal-weight mean of three gaps: 4G (OSIPTEL CG+CAR, best operator), straight-line distance to the nearest active school (cap 5 km) and to the nearest active public health facility (cap 10 km). Mean index: Independencia 8.8, Huaraz 21.6. No per-CP water/electricity source is complete (DATASS rural only, many zeroed rows), so they stay out of the index.

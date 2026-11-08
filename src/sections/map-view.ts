@@ -44,6 +44,7 @@ import {
   type SafeZoneFilters,
   zonePopup,
 } from '../lib/safezones.ts';
+import { centroPopup, GAP_STOPS, toColumns, tourStops } from '../lib/centros.ts';
 import type { SafeZoneData } from '../lib/safezones-data.ts';
 import { icon } from '../ui/icons.ts';
 import { mountPanel, type PanelItem } from './safezones-panel.ts';
@@ -74,11 +75,13 @@ const state: {
   base: Basemap['id'];
   risks: Set<RiskLayer['id']>;
   threeD: boolean;
+  columns: boolean;
   filters: SafeZoneFilters;
 } = {
   base: 'oficial',
   risks: new Set(),
   threeD: false,
+  columns: false,
   filters: { ...DEFAULT_FILTERS },
 };
 
@@ -166,6 +169,22 @@ function buildStyle(): StyleSpecification {
     });
   }
   if (data) addSafeZoneLayers(sources, layers, data);
+  if (data) {
+    // centros poblados as 3D columns: height = access-gap index, side = 2017 population
+    sources.centros = { type: 'geojson', data: toColumns(data.centros.centros) };
+    layers.push({
+      id: 'cp-columns',
+      type: 'fill-extrusion',
+      source: 'centros',
+      layout: { visibility: 'none' },
+      paint: {
+        'fill-extrusion-color': ['get', 'color'],
+        'fill-extrusion-height': ['get', 'height'],
+        'fill-extrusion-base': 0,
+        'fill-extrusion-opacity': 0.92,
+      },
+    });
+  }
   layers.push(
     {
       id: 'districts-line',
@@ -454,7 +473,7 @@ function fitSafeZones(m: MapLibre): void {
 }
 
 /** One click handler: the topmost interactive feature wins. */
-const CLICK_ORDER = ['sz-points', 'lakes', 'gauges', 'quakes', 'sz-zones', 'sz-hazard'];
+const CLICK_ORDER = ['sz-points', 'lakes', 'gauges', 'quakes', 'cp-columns', 'sz-zones', 'sz-hazard'];
 function bindClicks(m: MapLibre): void {
   m.on('click', (e) => {
     const layers = CLICK_ORDER.filter((id) => m.getLayer(id));
@@ -469,6 +488,10 @@ function bindClicks(m: MapLibre): void {
     if (id === 'sz-points') return showPlace(m, f.properties.uid as number);
     if (id === 'sz-zones') return showZone(m, f.properties.uid as number);
     selectZone(m, null);
+    if (id === 'cp-columns') {
+      const c = data!.centros.centros[f.properties.uid as number]!;
+      return openPopup(m, [c.lon, c.lat], centroPopup(c));
+    }
     if (id === 'sz-hazard')
       return openPopup(
         m,
@@ -510,6 +533,54 @@ function setRisk(m: MapLibre, r: RiskLayer, on: boolean): void {
   else state.risks.delete(r.id);
   m.setLayoutProperty(`risk-${r.id}`, 'visibility', on ? 'visible' : 'none');
   applyDistrictStyle(m);
+}
+
+function setColumns(m: MapLibre, on: boolean): void {
+  state.columns = on;
+  m.setLayoutProperty('cp-columns', 'visibility', on ? 'visible' : 'none');
+  // the columns read as heights only on a tilted map
+  if (on && !state.threeD) {
+    setThreeD(m, true);
+    syncControls?.();
+  }
+}
+
+let tourRun = 0;
+/** Fly the camera over the casco urbano, the villages with the largest gaps and Palcacocha; any input stops it. */
+async function runTour(m: MapLibre, chip: HTMLElement): Promise<void> {
+  if (!data) return;
+  const run = ++tourRun;
+  if (!state.columns) setColumns(m, true);
+  popup?.remove();
+  const stop = () => {
+    if (tourRun === run) tourRun++;
+  };
+  const canvas = m.getCanvasContainer();
+  const events = ['mousedown', 'touchstart', 'wheel', 'keydown'] as const;
+  for (const ev of events) canvas.addEventListener(ev, stop, { once: true, passive: true });
+  const live = () => tourRun === run && map === m;
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  try {
+    for (const s of tourStops(data.centros.centros)) {
+      if (!live()) break;
+      chip.textContent = s.label;
+      chip.hidden = false;
+      m.flyTo({
+        center: s.center,
+        zoom: s.zoom,
+        pitch: s.pitch,
+        bearing: s.bearing,
+        duration: 5200,
+        essential: true,
+      });
+      await new Promise<void>((r) => m.once('moveend', () => r()));
+      if (!live()) break;
+      await wait(s.holdMs);
+    }
+  } finally {
+    for (const ev of events) canvas.removeEventListener(ev, stop);
+    chip.hidden = true;
+  }
 }
 
 function setThreeD(m: MapLibre, on: boolean): void {
@@ -570,6 +641,12 @@ class LayersControl implements IControl {
         ).join(
           '',
         )}<p class="ml-status" role="status" hidden>Cargando la capa de CENEPRED…</p><p class="ml-note">Susceptibilidad para el escenario de lluvias de El Niño 2027.</p></fieldset>
+        <fieldset><legend>Brechas por centro poblado</legend>
+          <label class="ml-risk"><input type="checkbox" name="ml-cp" value="columns"${state.columns ? ' checked' : ''}>
+            <span><b>Columnas 3D</b><small>Altura: índice de brechas · ancho: población 2017</small></span></label>
+          <ul class="ml-legend ml-gap">${GAP_STOPS.map(([v, c]) => `<li><i style="background:${c}"></i>${v}</li>`).join('')}</ul>
+          <button type="button" class="ml-tour" data-action="tour">${icon('mapa')}<span>Recorrido automático</span></button>
+          <p class="ml-note">Conectividad 4G, distancia al colegio y a la salud pública (OSIPTEL, MINEDU, SUSALUD, INEI). Índice simple, no oficial.</p></fieldset>
       </div>`;
     riskStatus = box.querySelector<HTMLElement>('.ml-status');
     const toggle = box.querySelector<HTMLButtonElement>('.ml-toggle')!;
@@ -578,9 +655,22 @@ class LayersControl implements IControl {
       panel.hidden = !panel.hidden;
       toggle.setAttribute('aria-expanded', String(!panel.hidden));
     });
+    const chip = document.createElement('p');
+    chip.className = 'map-tour-chip';
+    chip.setAttribute('role', 'status');
+    chip.hidden = true;
+    m.getContainer().appendChild(chip);
+    box.querySelector('[data-action="tour"]')!.addEventListener('click', () => {
+      // the panel would cover the view: fold it while the camera flies
+      panel.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      void runTour(m, chip).then(() => this.sync());
+      this.sync();
+    });
     box.addEventListener('change', (e) => {
       const input = e.target as HTMLInputElement;
       if (input.name === 'ml-base') return setBase(m, input.value as Basemap['id']);
+      if (input.name === 'ml-cp') return setColumns(m, input.checked);
       const r = RISK_LAYERS.find((x) => x.id === input.value);
       if (!r) return;
       setRisk(m, r, input.checked);
@@ -595,6 +685,8 @@ class LayersControl implements IControl {
     this.box
       ?.querySelectorAll<HTMLInputElement>('input[name="ml-base"]')
       .forEach((i) => (i.checked = i.value === state.base));
+    const cp = this.box?.querySelector<HTMLInputElement>('input[name="ml-cp"]');
+    if (cp) cp.checked = state.columns;
   }
   onRemove(): void {
     this.box?.remove();
@@ -687,6 +779,7 @@ export function mount(el: HTMLElement, loadData: () => SafeZoneData): void {
     setBase(m, state.base);
     for (const r of RISK_LAYERS) if (state.risks.has(r.id)) setRisk(m, r, true);
     if (state.threeD) setThreeD(m, true);
+    if (state.columns) setColumns(m, true);
     applyFilters(m);
     if (pending) update(pending.panel, pending.now);
   });
@@ -709,6 +802,7 @@ export function unmount(): void {
   observer = null;
   for (const l of labels) l.remove();
   labels = [];
+  tourRun++;
   map?.remove();
   map = null;
   ready = false;

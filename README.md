@@ -21,6 +21,8 @@ gestión municipal (inversiones y contrataciones) y resultados electorales del d
 | Riesgo y población | CENEPRED – escenario FEN 2027 | 24 h |
 | Inversiones, contrataciones, elecciones | Importados de `resultados-ancash` (MEF, Infobras, OECE, ONPE) | fijo |
 | Zonas seguras ante aluvión | GeoPDF de Quillcay (MPH con la MDI, SINIA) y de Casca (INAIGEM), extraídos a `data/safe-zones/` | fijo |
+| Simulación 3D del aluvión de Palcacocha | Somos-Valenzuela et al. 2016, ANA 2016, INDECI 2015, GORE Áncash 2021, Defensoría 2026; relieve AWS Terrain Tiles (`src/lib/palcacocha.ts`) | fijo |
+| Brechas por centro poblado (columnas 3D) | OSIPTEL 2025, INEI Censos 2017, MINEDU ESCALE, SUSALUD RENIPRESS (`data/centros-poblados.json`) | fijo |
 
 No se usan fuentes con login, captcha o protección anti-robots. Quedan fuera: estaciones de SENAMHI
 (Cloudflare Turnstile), telemetría de Palcacocha (INAIGEM no la publica), Consulta Amigable del MEF.
@@ -48,6 +50,20 @@ python3 -m venv /tmp/geopdf-venv && /tmp/geopdf-venv/bin/pip install -r scripts/
 /tmp/geopdf-venv/bin/python scripts/geopdf/extract.py --huaraz "<Quillcay.pdf>" --casca "<Casca.pdf>"
 /tmp/geopdf-venv/bin/python -m unittest discover -s scripts/geopdf
 ```
+
+Simulación 3D del aluvión (`public/simulador/`): se construye con el kit de la skill `teardown` de Claude Code
+(no es dependencia npm, por eso los archivos generados van en el repositorio). El relieve y el cauce salen de
+`scripts/sim/terrain.py`; el código está en `sims/palcacocha-*`:
+
+```bash
+/tmp/geopdf-venv/bin/python scripts/sim/terrain.py --out sims/palcacocha-shared   # relieve, cauce y capas
+npm run build:sim             # public/simulador/palcacocha.html + elevation.glb (TEARDOWN_DIR opcional)
+npm run build:sim -- --film   # además la versión película en teardown-out/ para grabar el video
+```
+
+Brechas por centro poblado (`data/centros-poblados.json`): `scripts/centros/build.py --raw <descargas>` lee los
+archivos públicos listados en su cabecera (OSIPTEL, INEI 2017, ESCALE, RENIPRESS) y calcula el índice; comprueba
+que la población por centro poblado suma el total oficial de cada distrito.
 
 Variables: `PORT` (8787), `DATABASE_URL` (opcional; sin ella PGlite en `DATA_DIR`, por defecto `.datos/`),
 `DIST_DIR` (`dist`), `COLLECT=0` para no consultar fuentes.

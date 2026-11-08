@@ -1,4 +1,5 @@
 import type { FeatureCollection, LineString, MultiLineString, MultiPolygon, Point, Polygon } from 'geojson';
+import centrosRaw from '../../data/centros-poblados.json?raw';
 import arrowsRaw from '../../data/safe-zones/arrows.geojson?raw';
 import exposureRaw from '../../data/safe-zones/exposure.json?raw';
 import hazardRaw from '../../data/safe-zones/hazard.geojson?raw';
@@ -6,6 +7,7 @@ import influenceRaw from '../../data/safe-zones/influence.geojson?raw';
 import pointsRaw from '../../data/safe-zones/points.geojson?raw';
 import routesRaw from '../../data/safe-zones/routes.geojson?raw';
 import zonesRaw from '../../data/safe-zones/zones.geojson?raw';
+import type { CentrosData } from './centros.ts';
 import type { ArrowProps, Basin, HazardProps, ParcelExposure, PlaceProps, ZoneProps } from './safezones.ts';
 
 // The safe-zone layers (built by scripts/geopdf/extract.py). Imported only by the lazy map
@@ -23,6 +25,8 @@ export interface SafeZoneData {
   arrows: FeatureCollection<Point, ArrowProps & Uid>;
   /** Casca parcels per hazard level, and the counting rule */
   exposure: { parcels: ParcelExposure; rule: string };
+  /** Centros poblados of Independencia and Huaraz with the access-gap index (scripts/centros/build.py) */
+  centros: CentrosData;
 }
 
 /** Numbers every feature (uid = index) so the map can show a subset with a cheap `in` filter. */
@@ -45,5 +49,6 @@ export function loadSafeZoneData(): SafeZoneData {
     points: withUids<Point, PlaceProps>(pointsRaw),
     arrows: withUids<Point, ArrowProps>(arrowsRaw),
     exposure: (JSON.parse(exposureRaw) as { casca: SafeZoneData['exposure'] }).casca,
+    centros: JSON.parse(centrosRaw) as CentrosData,
   };
 }

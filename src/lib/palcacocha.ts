@@ -60,6 +60,9 @@ export const SOURCES = {
 
 export type SourceId = keyof typeof SOURCES;
 
+/** Centre of the lake, [lon, lat] (OpenStreetMap way 67765132, as in data/lagunas.json) */
+export const LAKE_POINT: [number, number] = [-77.3791, -9.3957];
+
 /** The lake by the latest primary bathymetry */
 export const LAKE = {
   volumeM3: 17_403_353,
